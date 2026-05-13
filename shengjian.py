@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 """
-声荐小程序签到
+声荐小程序签到（每日两次）
 
 打开微信小程序抓取 xcx.myinyun.com:4438 请求中的 authorization 值（Bearer 后的完整Token）
 填入环境变量 SJ_SIGN_TOKEN 中即可，支持多用户，每行一个Token。
@@ -82,10 +82,11 @@ def myprint(msg):
     all_logs.append(str(msg) + "\n")
 
 # ---------- 签到核心逻辑 ----------
-def sign_in(token):
+def sign_in(token, sign_no):
     """
     执行签到请求
     :param token: Bearer Token（不含Bearer前缀）
+    :param sign_no: 第几次签到（1 或 2）
     :return: (success, message)
     """
     url = "https://xcx.myinyun.com:4438/napi/gift"
@@ -109,28 +110,27 @@ def sign_in(token):
     try:
         resp = requests.put(url, headers=headers, json=data, timeout=30)
         resp_json = resp.json()
-        myprint(f"响应状态码: {resp.status_code}")
-        myprint(f"响应内容: {resp_json}")
+        myprint(f"第{sign_no}次签到响应状态码: {resp.status_code}")
+        myprint(f"第{sign_no}次签到响应内容: {resp_json}")
 
         # 根据常见签到接口格式判断成功与否
-        # 假设成功时 code 为 200 或 0，或包含 success/ok 等字段
         if resp.status_code == 200:
             code = resp_json.get("code")
             if code == 200 or code == 0 or code is None:
                 msg = resp_json.get("msg") or resp_json.get("message") or "签到成功"
-                return True, msg
+                return True, f"第{sign_no}次签到 {msg}"
             else:
-                return False, resp_json.get("msg", f"未知错误 code={code}")
+                return False, f"第{sign_no}次签到失败 {resp_json.get('msg', f'未知错误 code={code}')}"
         else:
-            return False, f"HTTP {resp.status_code}"
+            return False, f"第{sign_no}次签到失败 HTTP {resp.status_code}"
     except requests.exceptions.RequestException as e:
-        return False, f"网络请求异常: {str(e)}"
+        return False, f"第{sign_no}次签到网络异常: {str(e)}"
     except Exception as e:
-        return False, f"解析响应异常: {str(e)}"
+        return False, f"第{sign_no}次签到解析异常: {str(e)}"
 
 def main():
     """主函数"""
-    myprint("========== 声荐签到开始 ==========")
+    myprint("========== 声荐每日两次签到开始 ==========")
 
     # 获取Token列表
     token_env = os.getenv("SJ_SIGN_TOKEN")
@@ -148,8 +148,10 @@ def main():
         if delay_sec > 0:
             wait_with_countdown(delay_sec, "声荐签到")
 
+    total_success = 0
+    total_fail = 0
+
     # 逐个签到
-    success_count = 0
     for idx, token in enumerate(token_list, start=1):
         myprint(f"\n---------- 账号 {idx} ----------")
         # 脱敏显示Token（前4后4）
@@ -158,11 +160,13 @@ def main():
 
         # 每日两次签到
         for i in range(1, 3):
-            success, msg = sign(token, i)
+            success, msg = sign_in(token, i)
             myprint(f"{'✅' if success else '❌'} {msg}")
-            total_success += 1 if success else 0
-            total_fail += 0 if success else 1
-            if i == 1:   # 两次之间间隔2~5秒
+            if success:
+                total_success += 1
+            else:
+                total_fail += 1
+            if i == 1:   # 两次签到之间间隔2~5秒
                 time.sleep(random.uniform(2, 5))
 
         # 账号间稍作延迟，避免请求过快
@@ -170,7 +174,7 @@ def main():
             time.sleep(random.uniform(1, 3))
 
     myprint("\n========== 签到完成 ==========")
-    summary = f"总账号数: {len(token_list)}，成功: {success_count}，失败: {len(token_list) - success_count}"
+    summary = f"总账号数: {len(token_list)}，成功签到次数: {total_success}，失败次数: {total_fail}"
     myprint(summary)
 
     # 推送通知
