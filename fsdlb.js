@@ -5,6 +5,7 @@
 在面板「环境变量」中添加变量：fsdlbhbck 多个 token 用 # 隔开，例如 token1#token2#token3
 */
 
+const $ = new Env("逢三得利吧小程序签到");
 const axios = require("axios");
 const defaultUserAgent = "Mozilla/5.0 (iPhone; CPU iPhone OS 16_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 MicroMessenger/8.0.31(0x18001e31) NetType/WIFI Language/zh_CN miniProgram"
 
