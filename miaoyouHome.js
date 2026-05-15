@@ -1,5 +1,6 @@
 /**
  * cron 8 12 * * *  miaoyouHome.js
+ * https://www.popcentury.cn/scrm-rz-minip-tzlm
  * Show:微信公众号 庙友之家 每日签到 积分可换首饰
  * 变量名:miaoyouHome
  * 变量值:JSESSIONID的值
