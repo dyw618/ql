@@ -10,7 +10,7 @@ export tsthbck=""
 
 来源: https://raw.githubusercontent.com/linbailo/zyqinglong
 cron: 55 9 * * *
-const $ = new Env("塔斯汀汉堡");
+const $ = new Env("塔斯汀汉堡小程序");
 """
 
 import requests
