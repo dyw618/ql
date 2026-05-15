@@ -10,7 +10,7 @@ Cookie获取：微信小程序抓包获取 Cookie 请求头
 - ICBC_ENABLE_RANDOM：是否启用随机延迟（可选，默认true）
 
 cron: 30 9 * * *
-const $ = new Env("工行刷卡金天天抽");
+const $ = new Env("工行刷卡金天天抽小程序");
 """
 import os
 import time
