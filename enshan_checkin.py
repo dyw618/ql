@@ -1,10 +1,10 @@
 """
+cron: 8 12 * * *
+const $ = new Env("恩山论坛签到");
+
 抓取地址https://www.right.com.cn/FORUM/
 环境变量：
 变量名enshan_cookie      单账号Cookie
-
-cron 8 12 * * *
-new Env('恩山论坛签到')
 """
 
 import os

@@ -1,10 +1,10 @@
 """
+cron: 8 9,10,11 * * *
+const $ = new Env("BREO");
+
 入口:http://mx.qrurl.net/h5/wxa/link?sid=26407uif5Oq
 抓包breoplus.breo.cn的域名下的token，多账号换行分割
 账号变量名:BREO
-
-cron 8 9,10,11 * * *
-new Env("BREO")
 """
 
 import requests
