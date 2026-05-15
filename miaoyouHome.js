@@ -7,7 +7,7 @@
  * scriptVersionNow = "0.0.3";
  */
 
-const $ = new Env("庙友之家");
+const $ = new Env("庙友之家小程序");
 const notify = $.isNode() ? require('../sendNotify') : '';
 let ckName = "miaoyouHome";
 let envSplitor = ["@", "\n"];
