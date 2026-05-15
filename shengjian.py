@@ -13,7 +13,7 @@
     RANDOM_SIGNIN      - 可选，是否启用随机延迟，默认 true
 
 cron: 30 8 * * *
-const $ = new Env("声荐签到");
+const $ = new Env("声荐签到小程序");
 """
 
 import os
