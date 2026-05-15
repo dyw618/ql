@@ -1,47 +1,50 @@
 /**
- * cron 48 17 * * *  miaoyouHome.js
+ * cron 8 12 * * *  miaoyouHome.js
  * Show:微信公众号 庙友之家 每日签到 积分可换首饰
  * 变量名:miaoyouHome
  * 变量值:JSESSIONID的值
  * 多账号@或换行 
- * scriptVersionNow = "0.0.2";
+ * scriptVersionNow = "0.0.3";
  */
 
 const $ = new Env("庙友之家");
 const notify = $.isNode() ? require('../sendNotify') : '';
 let ckName = "miaoyouHome";
-let envSplitor = ["@", "\n"]; //多账号分隔符
-let strSplitor = "&"; //多变量分隔符
+let envSplitor = ["@", "\n"];
+let strSplitor = "&";
 let userIdx = 0;
 let userList = [];
 
-// 场景游戏实例代码，从抓包URL中获取
 const SCENE_GAME_INSTANCE_CODE = "xOc8YsVkScdD";
 
 class UserInfo {
     constructor(str) {
         this.index = ++userIdx;
-        this.ck = str.split(strSplitor)[0]; //单账号多变量分隔符
+        let cookieStr = str.split(strSplitor)[0];
+        if (cookieStr && !cookieStr.includes('JSESSIONID=')) {
+            cookieStr = 'JSESSIONID=' + cookieStr;
+        }
+        this.ck = cookieStr;
         this.ckStatus = true;
-        this.pointsBalance = 0; // 存储积分余额
-        this.signStatus = false; // 签到状态
-        this.signMessage = ""; // 签到消息
+        this.pointsBalance = 0;
+        this.signStatus = false;
+        this.signMessage = "";
+        this.useChance = 0;
+        this.chance = 0;
     }
     
     async main() {
-        // 先查询积分和签到状态
         await this.initData();
-        // 执行签到
-        await this.task();
-        // 再次查询积分
-        await this.userInfo();
+        if (!this.signStatus && this.ckStatus) {
+            await this.task();
+            await this.initData(); // 签到后重新查询积分
+        }
     }
     
-    // 初始化数据（查询签到状态和积分）
     async initData() {
         try {
             let options = {
-                fn: "初始化数据",
+                fn: "查询数据",
                 method: "post",
                 url: `https://www.popcentury.cn/scrm-rz-minip-tzlm/minipPointsController/initInstanceMemberAwards`,
                 params: {
@@ -52,40 +55,43 @@ class UserInfo {
                     "Accept-Encoding": "gzip, deflate, br",
                     "Accept-Language": "zh-CN,zh;q=0.9",
                     "Connection": "keep-alive",
-                    "Content-Type": "application/json;charset=UTF-8",
+                    "Content-Type": "application/json",
                     "Host": "www.popcentury.cn",
                     "Referer": "https://servicewechat.com/wx10b22bd20e2bccca/14/page-frame.html",
                     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Safari/537.36 MicroMessenger/7.0.20.1781(0x6700143B) NetType/WIFI MiniProgramEnv/Windows WindowsWechat/WMPF WindowsWechat(0x63090a13) UnifiedPCWindowsWechat(0xf254160e) XWEB/18163",
-                    "x-requested-with": "application/json",
+                    "x-requested-with": "XMLHttpRequest",
                     "xweb_xhr": "1",
-                    "Cookie": "JSESSIONID=" + this.ck
+                    "Cookie": this.ck
                 },
-                body: JSON.stringify({})
+                body: "{}"
             }
+            
             let { body: result } = await $.httpRequest(options);
             
-            if (result.code == 200) {
-                // 根据实际返回数据结构解析
+            if (result && result.code == 200) {
                 if (result.data) {
-                    this.pointsBalance = result.data.pointsBalance || result.data.points || 0;
-                    // 检查今日是否已签到
-                    this.signStatus = result.data.todaySignStatus || result.data.signStatus || false;
-                    $.log(`[账号${this.index}] 当前积分: ${this.pointsBalance}, 今日签到状态: ${this.signStatus ? '已签到' : '未签到'}`);
+                    this.useChance = result.data.useChance || 0;
+                    this.chance = result.data.chance || 0;
+                    // 如果已签到，useChance 应该是 0 或已使用
+                    this.signStatus = (this.useChance === 0 && this.chance === 0) ? true : false;
+                    $.log(`[账号${this.index}] ✅ 查询成功 | 剩余抽奖次数: ${this.chance} | 已使用: ${this.useChance}`);
                 } else {
-                    $.log(`[账号${this.index}] 初始化成功: ${JSON.stringify(result)}`);
+                    $.log(`[账号${this.index}] ✅ 查询成功: ${JSON.stringify(result)}`);
                 }
             } else {
-                $.log(`[账号${this.index}] 初始化失败: ${result.msg || JSON.stringify(result)}`);
+                $.log(`[账号${this.index}] ❌ 查询失败: ${result?.message || JSON.stringify(result)}`);
+                if (result?.code == 599) {
+                    this.ckStatus = false;
+                }
             }
         } catch (e) {
-            $.log(`[账号${this.index}] 初始化请求失败: ${e.message}`);
+            $.log(`[账号${this.index}] ❌ 请求异常: ${e.message}`);
         }
     }
     
     async task() {
-        // 如果已经签到，跳过
         if (this.signStatus) {
-            $.log(`[账号${this.index}] 今日已签到，跳过`);
+            $.log(`[账号${this.index}] ⏭️ 今日已签到，跳过`);
             return;
         }
         
@@ -102,104 +108,49 @@ class UserInfo {
                     "Accept-Encoding": "gzip, deflate, br",
                     "Accept-Language": "zh-CN,zh;q=0.9",
                     "Connection": "keep-alive",
-                    "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8",
+                    "Content-Type": "application/x-www-form-urlencoded",
                     "Host": "www.popcentury.cn",
                     "Referer": "https://servicewechat.com/wx10b22bd20e2bccca/14/page-frame.html",
                     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Safari/537.36 MicroMessenger/7.0.20.1781(0x6700143B) NetType/WIFI MiniProgramEnv/Windows WindowsWechat/WMPF WindowsWechat(0x63090a13) UnifiedPCWindowsWechat(0xf254160e) XWEB/18163",
-                    "x-requested-with": "application/json",
+                    "x-requested-with": "XMLHttpRequest",
                     "xweb_xhr": "1",
                     "Cookie": this.ck
                 },
-                body: JSON.stringify({})
+                body: "{}"
             }
+            
             let { body: result } = await $.httpRequest(options);
             
-            if (result.code == 200) {
-                if (result.data) {
-                    let awardPoints = result.data.awardPoints || result.data.points || 0;
-                    this.signMessage = `签到成功，获得 ${awardPoints} 积分`;
-                    $.log(`[账号${this.index}] ${this.signMessage}`);
-                } else {
-                    this.signMessage = `签到成功`;
-                    $.log(`[账号${this.index}] 签到成功: ${JSON.stringify(result)}`);
-                }
-                this.signStatus = true;
-            } else if (result.code == 500 || result.msg?.includes('已签到')) {
-                this.signMessage = `今日已签到`;
-                $.log(`[账号${this.index}] 今日已签到`);
+            if (result && result.code == 200) {
+                let awardMsg = result.data?.awardPoints ? `+${result.data.awardPoints}积分` : '成功';
+                this.signMessage = `✅ 签到${awardMsg}`;
+                $.log(`[账号${this.index}] ${this.signMessage}`);
                 this.signStatus = true;
             } else {
-                this.signMessage = `签到失败: ${result.msg || '未知错误'}`;
+                this.signMessage = `❌ 签到失败: ${result?.message || '未知错误'}`;
                 $.log(`[账号${this.index}] ${this.signMessage}`);
             }
         } catch (e) {
-            $.log(`[账号${this.index}] 签到请求失败: ${e.message}`);
+            $.log(`[账号${this.index}] ❌ 签到异常: ${e.message}`);
             this.signMessage = `签到异常: ${e.message}`;
         }
     }
     
-    async userInfo() {
-        try {
-            let options = {
-                fn: "我的积分",
-                method: "post",
-                url: `https://www.popcentury.cn/scrm-rz-minip-tzlm/minipPointsController/initInstanceMemberAwards`,
-                params: {
-                    sceneGameInstanceCode: SCENE_GAME_INSTANCE_CODE
-                },
-                headers: {
-                    "Accept": "*/*",
-                    "Accept-Encoding": "gzip, deflate, br",
-                    "Accept-Language": "zh-CN,zh;q=0.9",
-                    "Connection": "keep-alive",
-                    "Content-Type": "application/json;charset=UTF-8",
-                    "Host": "www.popcentury.cn",
-                    "Referer": "https://servicewechat.com/wx10b22bd20e2bccca/14/page-frame.html",
-                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Safari/537.36 MicroMessenger/7.0.20.1781(0x6700143B) NetType/WIFI MiniProgramEnv/Windows WindowsWechat/WMPF WindowsWechat(0x63090a13) UnifiedPCWindowsWechat(0xf254160e) XWEB/18163",
-                    "x-requested-with": "application/json",
-                    "xweb_xhr": "1",
-                    "Cookie": this.ck
-                },
-                body: JSON.stringify({})
-            }
-            let { body: result } = await $.httpRequest(options);
-            
-            if (result.code == 200) {
-                if (result.data) {
-                    this.pointsBalance = result.data.pointsBalance || result.data.points || 0;
-                    $.log(`[账号${this.index}] 当前积分: ${this.pointsBalance}`);
-                } else {
-                    $.log(`[账号${this.index}] 积分查询成功: ${JSON.stringify(result)}`);
-                }
-            } else {
-                $.log(`[账号${this.index}] 积分查询失败: ${result.msg || JSON.stringify(result)}`);
-            }
-        } catch (e) {
-            $.log(`[账号${this.index}] 积分查询失败: ${e.message}`);
-        }
-    }
-    
-    // 获取签到结果摘要
     getSummary() {
-        return `账号${this.index}: ${this.signMessage || (this.signStatus ? '已签到' : '未签到')} | 积分: ${this.pointsBalance}`;
+        return `账号${this.index}: ${this.signMessage || (this.signStatus ? '已签到' : '未签到')}`;
     }
 }
 
 async function start() {
-    let taskall = [];
     for (let user of userList) {
         if (user.ckStatus) {
-            taskall.push(user.main());
+            await user.main();
         }
     }
-    await Promise.all(taskall);
     
-    // 收集所有账号的签到结果
     let summary = [];
     for (let user of userList) {
-        if (user.ckStatus) {
-            summary.push(user.getSummary());
-        }
+        summary.push(user.getSummary());
     }
     if (summary.length > 0) {
         $.log("\n========== 签到汇总 ==========");
@@ -214,31 +165,22 @@ async function start() {
     }
     await $.SendMsg($.logs.join("\n"));
 })()
-    .catch((e) => console.log(e))
-    .finally(() => $.done());
+.catch((e) => console.log(e))
+.finally(() => $.done());
 
-//********************************************************
-/**
- * 变量检查与处理
- * @returns
- */
 async function checkEnv() {
     let userCookie = ($.isNode() ? process.env[ckName] : $.getdata(ckName)) || "";
     if (userCookie) {
         let e = envSplitor[0];
-        for (let o of envSplitor)
+        for (let o of envSplitor) {
             if (userCookie.indexOf(o) > -1) {
                 e = o;
                 break;
             }
+        }
         for (let n of userCookie.split(e)) {
             if (n && n.trim()) {
-                // 确保cookie值以JSESSIONID=开头
-                let ckValue = n.trim();
-                if (!ckValue.startsWith('JSESSIONID=')) {
-                    ckValue = 'JSESSIONID=' + ckValue;
-                }
-                userList.push(new UserInfo(ckValue));
+                userList.push(new UserInfo(n.trim()));
             }
         }
     } else {
