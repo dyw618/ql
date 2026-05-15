@@ -2,6 +2,12 @@
 # -*- coding: utf-8 -*-
 """
 cron: 3 11 * * *
+抓取地址https://www.aliyundrive.com/
+按 F12 打开开发者工具 → Application 标签页
+左侧找到 Local Storage → https://www.aliyundrive.com
+找到 token 项，复制 refresh_token 的值
+环境变量：
+    ALIYUN_REFRESH_TOKEN      多账号用换行分隔
 new Env('阿里云盘签到')
 """
 
