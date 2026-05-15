@@ -2,6 +2,11 @@
 # -*- coding: utf-8 -*-
 """
 cron: 0 9 * * *
+抓取地址https://pan.baidu.com/
+访问 百度网盘 登录
+F12 → Network → 复制Cookie
+环境变量：
+    BAIDU_COOKIE      示例：BDUSS=xxx; STOKEN=xxx...
 new Env('百度网盘签到')
 """
 
