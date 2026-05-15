@@ -1,8 +1,8 @@
 """
-script-path=xxx.py,tag=匹配cron用
 抓取地址https://www.right.com.cn/FORUM/
 环境变量：
     enshan_cookie      单账号Cookie
+
 cron 8 12 * * *
 new Env('恩山论坛签到')
 """
