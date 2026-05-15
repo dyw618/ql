@@ -1,8 +1,9 @@
 """
-cron "8 12 * * *" script-path=xxx.py,tag=匹配cron用
+script-path=xxx.py,tag=匹配cron用
 抓取地址https://pan.quark.cn/
 环境变量：
     QUARK_COOKIE      多账号用 &&或回车分隔
+cron 8 12 * * *
 new Env('夸克签到')
 """
 import os
