@@ -9,7 +9,8 @@ Cookie获取：微信小程序抓包获取 Cookie 请求头
 - ICBC_RANDOM_DELAY：随机延迟最大秒数（可选，默认300秒）
 - ICBC_ENABLE_RANDOM：是否启用随机延迟（可选，默认true）
 
-cron: 55 9 * * *
+cron: 30 9 * * *
+const $ = new Env("工行刷卡金天天抽");
 """
 import requests
 import os
