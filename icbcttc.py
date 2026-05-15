@@ -2,6 +2,7 @@
 工行刷卡金天天抽自动签到
 
 支持多账号签到
+https://chp.icbc.com.cn/bmcs/api-bmcs
 Cookie获取：微信小程序抓包获取 Cookie 请求头
 
 环境变量：
