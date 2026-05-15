@@ -1,5 +1,8 @@
 """
 cron: 39 17 * * *
+抓取地址https://www.smzdm.com/
+环境变量：
+    SMZDM_COOKIE      完整Cookie，多账号换行分隔
 new Env('什么值得买签到')
 """
 
