@@ -1,5 +1,5 @@
 """
-cron "13 18 * * *" script-path=xxx.py,tag=匹配cron用
+cron "8 12 * * *" script-path=xxx.py,tag=匹配cron用
 抓取地址https://pan.quark.cn/
 环境变量：
     QUARK_COOKIE      多账号用 &&或回车分隔
@@ -44,11 +44,11 @@ def format_time_remaining(seconds):
     """格式化时间显示"""
     if seconds <= 0:
         return "立即执行"
-    
+
     hours = seconds // 3600
     minutes = (seconds % 3600) // 60
     secs = seconds % 60
-    
+
     if hours > 0:
         return f"{hours}小时{minutes}分{secs}秒"
     elif minutes > 0:
@@ -60,14 +60,14 @@ def wait_with_countdown(delay_seconds):
     """带倒计时的等待"""
     if delay_seconds <= 0:
         return
-        
+
     print(f"夸克签到需要等待 {format_time_remaining(delay_seconds)}")
-    
+
     remaining = delay_seconds
     while remaining > 0:
         if remaining <= 10 or remaining % 10 == 0:
             print(f"倒计时: {format_time_remaining(remaining)}")
-        
+
         sleep_time = 1 if remaining <= 10 else min(10, remaining)
         time.sleep(sleep_time)
         remaining -= sleep_time
@@ -158,7 +158,7 @@ class Quark:
 def main():
     msg = ""
     global QUARK_COOKIE
-    
+
     QUARK_COOKIE = get_env()
 
     print("✅检测到共", len(QUARK_COOKIE), "个夸克账号\n")
@@ -171,7 +171,7 @@ def main():
         # 登录
         log = Quark(QUARK_COOKIE[i]).do_sign()
         msg += log + "\n"
-        
+
         # 多账号间随机等待
         if i < len(QUARK_COOKIE) - 1:  # 不是最后一个账号
             delay = random.uniform(3, 8)
@@ -181,7 +181,7 @@ def main():
         i += 1
 
     print(msg)
-    
+
     # 统一推送（只推送一次，包含所有账号结果）
     Push(contents=msg[:-1])
 
@@ -189,7 +189,7 @@ def main():
 
 if __name__ == "__main__":
     print(f"==== 夸克网盘签到开始 - {datetime.now().strftime('%Y-%m-%d %H:%M:%S')} ====")
-    
+
     # 随机延迟（可选）
     if random_signin:
         delay_seconds = random.randint(0, max_random_delay)
@@ -198,7 +198,7 @@ if __name__ == "__main__":
             print(f"随机模式: 延迟 {format_time_remaining(delay_seconds)} 后签到")
             print(f"预计签到时间: {signin_time.strftime('%H:%M:%S')}")
             wait_with_countdown(delay_seconds)
-    
+
     print("----------夸克网盘开始尝试签到----------")
     main()
     print("----------夸克网盘签到执行完毕----------")

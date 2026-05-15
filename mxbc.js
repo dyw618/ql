@@ -5,7 +5,7 @@
 @Description:  蜜雪冰城APP/小程序
 cron: 30 8 * * *
 ------------------------------------------
-#Notice:   
+#Notice:
 抓https://mxsa.mxbc.net 请求头Access-Token 多账号&或换行
 变量名：mxbc
 ⚠️【免责声明】
@@ -19,7 +19,7 @@ cron: 30 8 * * *
 7、所有直接或间接使用、查看此脚本的人均应该仔细阅读此声明。本人保留随时更改或补充此声明的权利。一旦您使用或复制了此脚本，即视为您已接受此免责声明。
 */
 
-const { Env } = require("../tools/env")
+const { Env } = require("./tools/env")
 const $ = new Env("蜜雪冰城小程序");
 let ckName = `mxbc`;
 const strSplitor = "#";
@@ -260,9 +260,7 @@ dOGyw/X4SFyodv8AEloqd81yGg==
         signature.updateString(content);
 
         const originSign = signature.sign();
-        const sign64u = rs.hextob64u(originSign);
-
-        return sign64u;
+        return rs.hextob64u(originSign);
 
     }
 

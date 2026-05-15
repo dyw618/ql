@@ -1,5 +1,5 @@
 """
-cron: 39 17 * * *
+cron: 8 12 * * *
 抓取地址https://www.smzdm.com/
 环境变量：
     SMZDM_COOKIE      完整Cookie，多账号换行分隔
@@ -75,23 +75,23 @@ def get_user_info(cookie):
             'Referer': 'https://m.smzdm.com/',
             'Accept-Encoding': 'gzip, deflate, br'
         }
-        
+
         response_info = requests.get(url=infourl, headers=headers, timeout=15).text
-        
+
         # 解析用户信息
         name_match = re.search(r'<a href="https://zhiyou.smzdm.com/user"> (.*?) </a>', response_info)
         level_match = re.search(r'<img src=".*?/level/(\d+).png.*?"', response_info)
         gold_match = re.search(r'<div class="assets-part assets-gold">.*?<span class="assets-part-element assets-num">(.*?)</span>', response_info, re.S)
         silver_match = re.search(r'<div class="assets-part assets-prestige">.*?<span class="assets-part-element assets-num">(.*?)</span>', response_info, re.S)
-        
+
         name = name_match.group(1).strip() if name_match else "未知用户"
         level = level_match.group(1) if level_match else "0"
         gold = gold_match.group(1).strip() if gold_match else "0"
         silver = silver_match.group(1).strip() if silver_match else "0"
-        
+
         print(f"👤 用户: {name} (VIP{level})")
         print(f"💰 金币: {gold}, 🪙 碎银: {silver}")
-        
+
         return name, level, gold, silver
     except Exception as e:
         print(f"❌ 获取用户信息失败: {e}")
@@ -103,7 +103,7 @@ def get_monthly_exp(cookie):
         print("📊 正在获取本月经验...")
         current_month = datetime.now().strftime('%Y-%m')
         total_exp = 0
-        
+
         for page in range(1, 4):  # 查询前3页
             url = f'https://zhiyou.m.smzdm.com/user/exp/ajax_log?page={page}'
             headers = {
@@ -116,17 +116,17 @@ def get_monthly_exp(cookie):
                 'Referer': 'https://zhiyou.m.smzdm.com/user/exp/',
                 'Accept-Encoding': 'gzip, deflate, br'
             }
-            
+
             resp = requests.get(url=url, headers=headers, timeout=10)
             if resp.status_code != 200:
                 break
-                
+
             result = resp.json()
             rows = result.get('data', {}).get('rows', [])
-            
+
             if not rows:
                 break
-                
+
             for row in rows:
                 exp_date = row.get('creation_date', '')[:7]
                 if exp_date == current_month:
@@ -134,10 +134,10 @@ def get_monthly_exp(cookie):
                 elif exp_date < current_month:
                     # 如果日期小于当前月份，说明已经查完了
                     return total_exp
-            
+
             # 添加请求间隔
             time.sleep(random.uniform(0.5, 1.5))
-        
+
         print(f"📊 本月经验: {total_exp}")
         return total_exp
     except Exception as e:
@@ -147,11 +147,11 @@ def get_monthly_exp(cookie):
 def smzdm_signin(cookie, index):
     """什么值得买签到 - 单个账号"""
     print(f"\n==== 开始第{index}个帐号签到 ====")
-    
+
     try:
         # 0. 获取用户信息
         name, level, gold, silver = get_user_info(cookie)
-        
+
         # 1. 获取Token
         print("🤖 正在获取Token...")
         ts = int(round(time.time() * 1000))
@@ -169,15 +169,15 @@ def smzdm_signin(cookie, index):
             "time": ts,
             "sign": hashlib.md5(bytes(f'f=android&time={ts}&v=10.4.1&weixin=1&key=apr1$AwP!wRRT$gJ/q.X24poeBInlUJC', encoding='utf-8')).hexdigest().upper()
         }
-        
+
         html = requests.post(url=url, headers=headers, data=data, timeout=15)
-        
+
         # 检查HTTP状态码
         if html.status_code != 200:
             error_msg = f"❌ 账号{index}: HTTP请求失败，状态码: {html.status_code}"
             print(error_msg)
             return error_msg, False
-        
+
         # 尝试解析JSON
         try:
             result = html.json()
@@ -185,22 +185,22 @@ def smzdm_signin(cookie, index):
             error_msg = f"❌ 账号{index}: 响应不是有效的JSON格式 - {str(e)}"
             print(error_msg)
             return error_msg, False
-        
+
         # 检查API返回的错误码
         error_code = result.get('error_code')
         error_msg_api = result.get('error_msg', '未知错误')
-        
+
         if str(error_code) != "0":
             error_msg = f"❌ 账号{index}: Token获取失败 - 错误码: {error_code}, 错误信息: {error_msg_api}"
             print(error_msg)
             return error_msg, False
-        
+
         # 检查是否有data字段和token
         if 'data' not in result or 'token' not in result['data']:
             error_msg = f"❌ 账号{index}: 响应中缺少token数据 - {result}"
             print(error_msg)
             return error_msg, False
-            
+
         token = result['data']['token']
         print(f"✅ Token获取成功")
 
@@ -216,37 +216,37 @@ def smzdm_signin(cookie, index):
             "token": token,
             "sign": hashlib.md5(bytes(f'f=android&sk=ierkM0OZZbsuBKLoAgQ6OJneLMXBQXmzX+LXkNTuKch8Ui2jGlahuFyWIzBiDq/L&time={Timestamp}&token={token}&v=10.4.1&weixin=1&key=apr1$AwP!wRRT$gJ/q.X24poeBInlUJC', encoding='utf-8')).hexdigest().upper()
         }
-        
+
         # 签到请求
         url_signin = 'https://user-api.smzdm.com/checkin'
         html_signin = requests.post(url=url_signin, headers=headers, data=sign_data, timeout=15)
-        
+
         if html_signin.status_code != 200:
             error_msg = f"❌ 账号{index}: 签到HTTP请求失败，状态码: {html_signin.status_code}"
             print(error_msg)
             return error_msg, False
-        
+
         try:
             signin_result = html_signin.json()
         except json.JSONDecodeError as e:
             error_msg = f"❌ 账号{index}: 签到响应不是有效的JSON格式 - {str(e)}"
             print(error_msg)
             return error_msg, False
-        
+
         signin_msg = signin_result.get('error_msg', '签到状态未知')
         signin_code = signin_result.get('error_code', -1)
         print(f"🎯 签到状态: {signin_msg}")
-        
+
         # 3. 获取签到奖励
         print("🎁 正在查询签到奖励...")
         url_reward = 'https://user-api.smzdm.com/checkin/all_reward'
         html_reward = requests.post(url=url_reward, headers=headers, data=sign_data, timeout=15)
-        
+
         reward_info = ""
         if html_reward.status_code == 200:
             try:
                 reward_result = html_reward.json()
-                
+
                 if str(reward_result.get('error_code')) == "0" and reward_result.get('data'):
                     normal_reward = reward_result["data"].get("normal_reward", {})
                     if normal_reward:
@@ -259,10 +259,10 @@ def smzdm_signin(cookie, index):
                 print(f"⚠️ 奖励信息解析失败: {e}")
         else:
             print(f"⚠️ 奖励查询失败，状态码: {html_reward.status_code}")
-        
+
         # 4. 获取本月经验
         monthly_exp = get_monthly_exp(cookie)
-        
+
         # 5. 组合结果消息
         final_msg = f"""什么值得买签到结果
 
@@ -276,14 +276,14 @@ def smzdm_signin(cookie, index):
 📊 状态码: {signin_code}{reward_info}
 
 🕐 签到时间: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"""
-        
+
         # 判断是否成功
-        is_success = (str(signin_code) == "0" or 
-                     "成功" in signin_msg or 
-                     "已经" in signin_msg or 
+        is_success = (str(signin_code) == "0" or
+                     "成功" in signin_msg or
+                     "已经" in signin_msg or
                      "重复" in signin_msg or
                      "已签" in signin_msg)
-        
+
         print(f"{'✅ 签到成功' if is_success else '❌ 签到失败'}")
         return final_msg, is_success
 
@@ -303,7 +303,7 @@ def smzdm_signin(cookie, index):
 def main():
     """主程序入口"""
     print(f"==== 什么值得买签到开始 - {datetime.now().strftime('%Y-%m-%d %H:%M:%S')} ====")
-    
+
     # 随机延迟（整体延迟）
     if random_signin:
         delay_seconds = random.randint(0, max_random_delay)
@@ -315,7 +315,7 @@ def main():
 
     # 获取环境变量
     SMZDM_COOKIE_env = os.getenv("SMZDM_COOKIE")
-    
+
     if not SMZDM_COOKIE_env:
         error_msg = "❌ 未找到SMZDM_COOKIE环境变量，请设置什么值得买Cookie"
         print(error_msg)
@@ -325,10 +325,10 @@ def main():
     # 解析多账号Cookie（使用换行符分割，支持Cookie中包含&符号）
     SMZDM_COOKIEs = [c.strip() for c in SMZDM_COOKIE_env.replace('\r\n', '\n').split('\n') if c.strip()]
     print(f"📝 共发现 {len(SMZDM_COOKIEs)} 个账号")
-    
+
     success_count = 0
     total_count = len(SMZDM_COOKIEs)
-    
+
     for i, cookie in enumerate(SMZDM_COOKIEs):
         try:
             # 账号间随机等待
@@ -336,22 +336,22 @@ def main():
                 delay = random.uniform(5, 15)
                 print(f"⏱️  随机等待 {delay:.1f} 秒后处理下一个账号...")
                 time.sleep(delay)
-            
+
             # 执行签到
             result_msg, is_success = smzdm_signin(cookie.strip(), i + 1)
-            
+
             if is_success:
                 success_count += 1
-            
+
             # 发送单个账号通知
             title = f"什么值得买账号{i + 1}签到{'成功' if is_success else '失败'}"
             notify_user(title, result_msg)
-            
+
         except Exception as e:
             error_msg = f"❌ 账号{i + 1}: 处理异常 - {str(e)}"
             print(error_msg)
             notify_user(f"什么值得买账号{i + 1}签到失败", error_msg)
-    
+
     # 发送汇总通知
     if total_count > 1:
         summary_msg = f"""什么值得买签到汇总
@@ -361,9 +361,9 @@ def main():
 ❌ 签到失败: {total_count - success_count}个账号
 📈 成功率: {success_count/total_count*100:.1f}%
 🕐 完成时间: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"""
-        
+
         notify_user("什么值得买签到汇总", summary_msg)
-    
+
     print(f"\n==== 什么值得买签到完成 - 成功{success_count}/{total_count} - {datetime.now().strftime('%Y-%m-%d %H:%M:%S')} ====")
 
 if __name__ == "__main__":

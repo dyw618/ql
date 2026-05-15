@@ -1,10 +1,10 @@
-#by:哆啦A梦
-#入口:http://mx.qrurl.net/h5/wxa/link?sid=26407uif5Oq
-#抓包breoplus.breo.cn的域名下的token，多账号换行分割
-#账号变量名:BREO
-#new Env("BREO")
-#cron 8 9,10,11 * * *
-
+"""by:哆啦A梦
+入口:http://mx.qrurl.net/h5/wxa/link?sid=26407uif5Oq
+抓包breoplus.breo.cn的域名下的token，多账号换行分割
+账号变量名:BREO
+cron 8 9,10,11 * * *
+new Env("BREO")
+"""
 
 import requests
 import json
@@ -13,7 +13,7 @@ import time
 
 def get_random_one_word():
     try:
-        response = requests.get("https://uapis.cn/api/say")
+        response = requests.get("https://api.btstu.cn/yan/api.php")
         if response.status_code == 200:
             return response.text.strip()
         else:
@@ -21,36 +21,6 @@ def get_random_one_word():
     except Exception as e:
         print(f"获取一言时出错: {e}")
         return "无法获取一言"
-
-def get_proclamation():
-    primary_url = "https://github.com/3288588344/toulu/raw/refs/heads/main/tl.txt"
-    backup_url = "https://tfapi.cn/TL/tl.json"
-    try:
-        response = requests.get(primary_url, timeout=10)
-        if response.status_code == 200:
-            print("\n" + "=" * 50)
-            print("📢 公告信息")
-            print("=" * 35)
-            print(response.text)
-            print("=" * 35 + "\n")
-            print("公告获取成功，开始执行任务...\n")
-            return
-    except requests.exceptions.RequestException as e:
-        print(f"获取公告时发生错误: {e}, 尝试备用链接...")
-
-    try:
-        response = requests.get(backup_url, timeout=10)
-        if response.status_code == 200:
-            print("\n" + "=" * 50)
-            print("📢 公告信息")
-            print("=" * 35)
-            print(response.text)
-            print("=" * 35 + "\n")
-            print("公告获取成功，开始执行任务...\n")
-        else:
-            print(f"⚠️ 获取公告失败，状态码: {response.status_code}")
-    except requests.exceptions.RequestException as e:
-        print(f"⚠️ 获取公告时发生错误: {e}, 可能是网络问题或链接无效。")
 
 def post_to_breo(token, content, title):
     url = "https://breoplus.breo.cn/breo-app/communityBaseInfo/releasePost"

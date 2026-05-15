@@ -1,12 +1,12 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
 """
-cron: 0 9 * * *
 抓取地址https://pan.baidu.com/
 访问 百度网盘 登录
 F12 → Network → 复制Cookie
 环境变量：
     BAIDU_COOKIE      示例：BDUSS=xxx; STOKEN=xxx...
+cron: 8 12 * * *
 new Env('百度网盘签到')
 """
 
@@ -15,7 +15,7 @@ import time
 import re
 import requests
 import random
-from datetime import datetime, timedelta
+from datetime import datetime
 
 # ---------------- 统一通知模块加载 ----------------
 hadsend = False
@@ -110,11 +110,11 @@ class BaiduPan:
         url = "https://pan.baidu.com/rest/2.0/membership/level?app_id=250528&web=5&method=signin"
         signed_headers = HEADERS.copy()
         signed_headers['Cookie'] = self.cookie
-        
+
         try:
             resp = requests.get(url, headers=signed_headers, timeout=15)
             print(f"🔍 签到响应状态码: {resp.status_code}")
-            
+
             if resp.status_code == 200:
                 sign_point = re.search(r'points":(\d+)', resp.text)
                 signin_error_msg = re.search(r'"error_msg":"(.*?)"', resp.text)
@@ -141,7 +141,7 @@ class BaiduPan:
                 error_msg = f"签到失败，状态码: {resp.status_code}"
                 self.add_message(f"❌ {error_msg}")
                 return False, error_msg
-                
+
         except requests.exceptions.Timeout:
             error_msg = "签到请求超时"
             self.add_message(f"❌ {error_msg}")
@@ -164,14 +164,14 @@ class BaiduPan:
         url = "https://pan.baidu.com/act/v2/membergrowv2/getdailyquestion?app_id=250528&web=5"
         signed_headers = HEADERS.copy()
         signed_headers['Cookie'] = self.cookie
-        
+
         try:
             resp = requests.get(url, headers=signed_headers, timeout=15)
             if resp.status_code == 200:
                 answer = re.search(r'"answer":(\d+)', resp.text)
                 ask_id = re.search(r'"ask_id":(\d+)', resp.text)
                 question = re.search(r'"question":"(.*?)"', resp.text)
-                
+
                 if answer and ask_id:
                     if question:
                         print(f"❓ 今日问题: {question.group(1)}")
@@ -197,7 +197,7 @@ class BaiduPan:
         )
         signed_headers = HEADERS.copy()
         signed_headers['Cookie'] = self.cookie
-        
+
         try:
             resp = requests.get(url, headers=signed_headers, timeout=15)
             if resp.status_code == 200:
@@ -240,7 +240,7 @@ class BaiduPan:
         url = "https://pan.baidu.com/rest/2.0/membership/user?app_id=250528&web=5&method=query"
         signed_headers = HEADERS.copy()
         signed_headers['Cookie'] = self.cookie
-        
+
         try:
             resp = requests.get(url, headers=signed_headers, timeout=15)
             if resp.status_code == 200:
@@ -252,7 +252,7 @@ class BaiduPan:
                 level = current_level.group(1) if current_level else "未知"
                 value = current_value.group(1) if current_value else "未知"
                 user = username.group(1) if username else "未知用户"
-                
+
                 # VIP类型解析
                 vip_status = "普通用户"
                 if vip_type:
@@ -273,7 +273,7 @@ class BaiduPan:
 
                 level_msg = f"当前会员等级: Lv.{level}，成长值: {value}，会员类型: {vip_status}"
                 self.add_message(level_msg)
-                
+
                 print(f"👤 用户: {user}")
                 print(f"🏆 等级: Lv.{level}")
                 print(f"📊 成长值: {value}")
@@ -290,7 +290,7 @@ class BaiduPan:
     def main(self):
         """主执行函数"""
         print(f"\n==== 百度网盘账号{self.index} 开始签到 ====")
-        
+
         if not self.cookie.strip():
             error_msg = """Cookie配置错误
 
@@ -305,26 +305,26 @@ class BaiduPan:
 6. 复制完整的Cookie值
 7. 在青龙面板中添加环境变量BAIDU_COOKIE
 """
-            
+
             print(f"❌ {error_msg}")
             return error_msg, False
 
         # 1. 执行签到
         signin_success, signin_msg = self.signin()
-        
+
         # 2. 随机等待
         time.sleep(random.uniform(2, 5))
-        
+
         # 3. 获取并回答每日问题
         answer_success = False
         answer_msg = ""
         answer, ask_id = self.get_daily_question()
         if answer and ask_id:
             answer_success, answer_msg = self.answer_question(answer, ask_id)
-        
+
         # 4. 获取用户信息
         user, level, value, vip_status = self.get_user_info()
-        
+
         # 5. 组合结果消息
         final_msg = f"""🌟 百度网盘签到结果
 
@@ -338,7 +338,7 @@ class BaiduPan:
             final_msg += f"\n🤔 答题: {answer_msg}"
 
         final_msg += f"\n⏰ 时间: {datetime.now().strftime('%m-%d %H:%M')}"
-        
+
         # 签到或答题任一成功都算成功
         is_success = signin_success or answer_success
         print(f"{'✅ 任务完成' if is_success else '❌ 任务失败'}")
@@ -347,20 +347,20 @@ class BaiduPan:
 def main():
     """主程序入口"""
     print(f"==== 百度网盘签到开始 - {datetime.now().strftime('%Y-%m-%d %H:%M:%S')} ====")
-    
+
     # 显示配置状态
     print(f"🔒 隐私保护模式: {'已启用' if privacy_mode else '已禁用'}")
-    
+
     # 随机延迟（整体延迟）
     if random_signin:
         delay_seconds = random.randint(0, max_random_delay)
         if delay_seconds > 0:
             print(f"🎲 随机延迟: {format_time_remaining(delay_seconds)}")
             wait_with_countdown(delay_seconds, "百度网盘签到")
-    
+
     # 获取Cookie配置
     baidu_cookies = BAIDU_COOKIE
-    
+
     if not baidu_cookies:
         error_msg = """❌ 未找到BAIDU_COOKIE环境变量
 
@@ -373,7 +373,7 @@ def main():
 6. 复制完整的Cookie值
 7. 在青龙面板中添加环境变量BAIDU_COOKIE
 """
-        
+
         print(error_msg)
         notify_user("百度网盘签到失败", error_msg)
         return
@@ -383,13 +383,13 @@ def main():
         cookies = [cookie.strip() for cookie in baidu_cookies.split('\n') if cookie.strip()]
     else:
         cookies = [baidu_cookies.strip()]
-    
+
     print(f"📝 共发现 {len(cookies)} 个账号")
-    
+
     success_count = 0
     total_count = len(cookies)
     results = []
-    
+
     for index, cookie in enumerate(cookies):
         try:
             # 账号间随机等待
@@ -397,30 +397,30 @@ def main():
                 delay = random.uniform(10, 20)
                 print(f"⏱️  随机等待 {delay:.1f} 秒后处理下一个账号...")
                 time.sleep(delay)
-            
+
             # 执行签到
             baidu_pan = BaiduPan(cookie, index + 1)
             result_msg, is_success = baidu_pan.main()
-            
+
             if is_success:
                 success_count += 1
-            
+
             results.append({
                 'index': index + 1,
                 'success': is_success,
                 'message': result_msg
             })
-            
+
             # 发送单个账号通知
             status = "成功" if is_success else "失败"
             title = f"百度网盘账号{index + 1}签到{status}"
             notify_user(title, result_msg)
-            
+
         except Exception as e:
             error_msg = f"账号{index + 1}: 执行异常 - {str(e)}"
             print(f"❌ {error_msg}")
             notify_user(f"百度网盘账号{index + 1}签到失败", error_msg)
-    
+
     # 发送汇总通知
     if total_count > 1:
         summary_msg = f"""📊 百度网盘签到汇总
@@ -430,16 +430,16 @@ def main():
 ❌ 失败: {total_count - success_count}个
 📊 成功率: {success_count/total_count*100:.1f}%
 ⏰ 完成时间: {datetime.now().strftime('%m-%d %H:%M')}"""
-        
+
         # 添加详细结果（最多显示5个账号的详情）
         if len(results) <= 5:
             summary_msg += "\n\n📋 详细结果:"
             for result in results:
                 status_icon = "✅" if result['success'] else "❌"
                 summary_msg += f"\n{status_icon} 账号{result['index']}"
-        
+
         notify_user("百度网盘签到汇总", summary_msg)
-    
+
     print(f"\n==== 百度网盘签到完成 - 成功{success_count}/{total_count} - {datetime.now().strftime('%Y-%m-%d %H:%M:%S')} ====")
 
 def handler(event, context):

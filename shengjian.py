@@ -12,16 +12,14 @@
     MAX_RANDOM_DELAY   - 可选，随机延迟最大秒数，默认3600秒（1小时）
     RANDOM_SIGNIN      - 可选，是否启用随机延迟，默认 true
 
-cron: 30 8 * * *
+cron: 40 6 * * *
 const $ = new Env("声荐签到小程序");
 """
 
 import os
-import sys
 import time
 import random
 import requests
-from datetime import datetime
 
 # ---------- 统一通知模块加载 ----------
 has_notify = False
