@@ -42,8 +42,8 @@ ACT_ID = "LOT20260331140621284295"
 LOTTERY_URL = f"https://chp.icbc.com.cn/bmcs/api-bmcs/v3/lott/h5/lottery?corpId={CORP_ID}"
 ACTIVITY_DETAIL_URL = f"https://chp.icbc.com.cn/bmcs/api-bmcs/v3/lott/h5/getActivityDetail?corpId={CORP_ID}&actId={ACT_ID}&roccSwt=0"
 
-MAX_RANDOM_DELAY = int(os.getenv("ICBC_RANDOM_DELAY", "300"))
-ENABLE_RANDOM = os.getenv("ICBC_ENABLE_RANDOM", "true").lower() == "true"
+MAX_RANDOM_DELAY = int(os.getenv("MAX_RANDOM_DELAY", "300"))
+ENABLE_RANDOM = os.getenv("ICBC_ENABLE_RANDOM", "false").lower() == "true"
 
 # 全局日志
 logs = []
