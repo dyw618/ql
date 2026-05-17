@@ -10,12 +10,10 @@ V2版-目前有效
     ①打开抓包，手机端访问抽奖页
     ②找到url为 https://drive-m.quark.cn/1/clouddrive/act/growth/reward 的请求信息
     ③复制整段url，该链接后面必须要有参数: kps sign vcode，粘贴到环境变量
-    环境变量名为 COOKIE_QUARK 多账户用 回车 或 && 分开
+    环境变量名为 QUARK_COOKIE 多账户用 回车 或 && 分开
     user字段是用户名 (可是随意填写，多账户方便区分)
     例如: user=张三; url=https://drive-m.quark.cn/1/clouddrive/act/growth/reward?xxxxxx=xxxxxx&kps=abcdefg&sign=hijklmn&vcode=111111111;
     旧版环境变量格式也兼容，例如: user=张三; kps=abcdefg; sign=hijklmn; vcode=111111111;
-环境变量：
-变量名:QUARK_COOKIE      多账号用 &&或回车分隔
 """
 
 import os
@@ -25,7 +23,7 @@ import sys
 import requests
 
 # 测试用环境变量
-# os.environ['COOKIE_QUARK'] = ''
+# os.environ['QUARK_COOKIE'] = ''
 
 try:  # 异常捕捉
     from notify import send  # 导入消息通知模块
@@ -35,14 +33,14 @@ except Exception as err:  # 异常捕捉
 
 # 获取环境变量
 def get_env():
-    # 判断 COOKIE_QUARK是否存在于环境变量
-    if "COOKIE_QUARK" in os.environ:
+    # 判断 QUARK_COOKIE是否存在于环境变量
+    if "QUARK_COOKIE" in os.environ:
         # 读取系统变量以 \n 或 && 分割变量
-        cookie_list = re.split('\n|&&', os.environ.get('COOKIE_QUARK'))
+        cookie_list = re.split('\n|&&', os.environ.get('QUARK_COOKIE'))
     else:
         # 标准日志输出
-        print('❌未添加COOKIE_QUARK变量')
-        send('夸克自动签到', '❌未添加COOKIE_QUARK变量')
+        print('❌未添加QUARK_COOKIE变量')
+        send('夸克自动签到', '❌未添加QUARK_COOKIE变量')
         # 脚本退出
         sys.exit(0)
 
@@ -198,16 +196,16 @@ def main():
     :return: 返回一个字符串，包含签到结果
     '''
     msg = ""
-    global cookie_quark
-    cookie_quark = get_env()
+    global quark_cookie
+    quark_cookie = get_env()
 
-    print("✅ 检测到共", len(cookie_quark), "个夸克账号\n")
+    print("✅ 检测到共", len(quark_cookie), "个夸克账号\n")
 
     i = 0
-    while i < len(cookie_quark):
+    while i < len(quark_cookie):
         # 获取user_data参数
         user_data = {}  # 用户信息
-        for a in cookie_quark[i].replace(" ", "").split(';'):
+        for a in quark_cookie[i].replace(" ", "").split(';'):
             if not a == '':
                 user_data.update({a[0:a.index('=')]: a[a.index('=') + 1:]})
 
