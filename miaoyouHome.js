@@ -11,46 +11,27 @@
 const $ = new Env("庙友之家小程序");
 const notify = $.isNode() ? require('./sendNotify') : '';
 let ckName = "miaoyouHome";
-let envSplitor = ["@", "\n"];
-let strSplitor = "&";
+let envSplitor = ["@", "\n"]; //多账号分隔符
+let strSplitor = "&"; //多变量分隔符
 let userIdx = 0;
 let userList = [];
-
-const SCENE_GAME_INSTANCE_CODE = "xOc8YsVkScdD";
-
 class UserInfo {
     constructor(str) {
         this.index = ++userIdx;
-        let cookieStr = str.split(strSplitor)[0];
-        if (cookieStr && !cookieStr.includes('JSESSIONID=')) {
-            cookieStr = 'JSESSIONID=' + cookieStr;
-        }
-        this.ck = cookieStr;
+        this.ck = str.split(strSplitor)[0]; //单账号多变量分隔符
         this.ckStatus = true;
-        this.pointsBalance = 0;
-        this.signStatus = false;
-        this.signMessage = "";
-        this.useChance = 0;
-        this.chance = 0;
+        //定义在这里的headers会被get请求删掉content-type 而不会重置
     }
-
     async main() {
-        await this.initData();
-        if (!this.signStatus && this.ckStatus) {
-            await this.task();
-            await this.initData(); // 签到后重新查询积分
-        }
+        await this.task();
+        await this.userInfo()
     }
-
-    async initData() {
+    async task() {
         try {
             let options = {
-                fn: "查询数据",
+                fn: "签到",
                 method: "post",
-                url: `https://www.popcentury.cn/scrm-rz-minip-tzlm/minipPointsController/initInstanceMemberAwards`,
-                params: {
-                    sceneGameInstanceCode: SCENE_GAME_INSTANCE_CODE
-                },
+                url: `https://www.popcentury.cn/scrm-rz-minip-tzlm/minipPointsController/initInstanceMemberAwards?sceneGameInstanceCode=xOc8YsVkScdD`,
                 headers: {
                     "Accept": "*/*",
                     "Accept-Encoding": "gzip, deflate, br",
@@ -59,104 +40,73 @@ class UserInfo {
                     "Content-Type": "application/json",
                     "Host": "www.popcentury.cn",
                     "Referer": "https://servicewechat.com/wx10b22bd20e2bccca/14/page-frame.html",
+                    "Sec-Fetch-Dest": "empty",
+                    "Sec-Fetch-Mode": "cors",
+                    "Sec-Fetch-Site": "cross-site",
                     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Safari/537.36 MicroMessenger/7.0.20.1781(0x6700143B) NetType/WIFI MiniProgramEnv/Windows WindowsWechat/WMPF WindowsWechat(0x63090a13) UnifiedPCWindowsWechat(0xf254160e) XWEB/18163",
-                    "x-requested-with": "XMLHttpRequest",
+                    "x-requested-with": "application/json",
                     "xweb_xhr": "1",
-                    "Cookie": this.ck
+                    "Cookie": "JSESSIONID=" + this.ck
                 },
-                body: "{}"
+                body: JSON.stringify({})
             }
-
             let { body: result } = await $.httpRequest(options);
-
-            if (result && result.code == 200) {
-                if (result.data) {
-                    this.useChance = result.data.useChance || 0;
-                    this.chance = result.data.chance || 0;
-                    // 如果已签到，useChance 应该是 0 或已使用
-                    this.signStatus = (this.useChance === 0 && this.chance === 0) ? true : false;
-                    $.log(`[账号${this.index}] ✅ 查询成功 | 剩余抽奖次数: ${this.chance} | 已使用: ${this.useChance}`);
-                } else {
-                    $.log(`[账号${this.index}] ✅ 查询成功: ${JSON.stringify(result)}`);
-                }
+            if(result.code == "200"){
+                let chance = result.data?.chance || 0;
+                let useChance = result.data?.useChance || 0;
+                $.log(`签到${useChance == 1 ? '成功' : '结果'}，剩余抽奖次数[${chance}]`)
             } else {
-                $.log(`[账号${this.index}] ❌ 查询失败: ${result?.message || JSON.stringify(result)}`);
-                if (result?.code == 599) {
-                    this.ckStatus = false;
-                }
+                $.log(`签到失败: ${result.message}`)
             }
         } catch (e) {
-            $.log(`[账号${this.index}] ❌ 请求异常: ${e.message}`);
+            console.log(e);
         }
     }
-
-    async task() {
-        if (this.signStatus) {
-            $.log(`[账号${this.index}] ⏭️ 今日已签到，跳过`);
-            return;
-        }
-
+    async userInfo() {
         try {
             let options = {
-                fn: "签到",
+                fn: "我的积分",
                 method: "post",
-                url: `https://www.popcentury.cn/scrm-rz-minip-tzlm/minipPointsController/extractInstanceMemberAwards`,
-                params: {
-                    sceneGameInstanceCode: SCENE_GAME_INSTANCE_CODE
-                },
+                url: `https://www.popcentury.cn/scrm-rz-minip-tzlm/memberController/showMemberInfo.do`,
                 headers: {
                     "Accept": "*/*",
                     "Accept-Encoding": "gzip, deflate, br",
                     "Accept-Language": "zh-CN,zh;q=0.9",
                     "Connection": "keep-alive",
-                    "Content-Type": "application/x-www-form-urlencoded",
+                    "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8",
                     "Host": "www.popcentury.cn",
                     "Referer": "https://servicewechat.com/wx10b22bd20e2bccca/14/page-frame.html",
+                    "Sec-Fetch-Dest": "empty",
+                    "Sec-Fetch-Mode": "cors",
+                    "Sec-Fetch-Site": "cross-site",
                     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Safari/537.36 MicroMessenger/7.0.20.1781(0x6700143B) NetType/WIFI MiniProgramEnv/Windows WindowsWechat/WMPF WindowsWechat(0x63090a13) UnifiedPCWindowsWechat(0xf254160e) XWEB/18163",
-                    "x-requested-with": "XMLHttpRequest",
+                    "x-requested-with": "application/json",
                     "xweb_xhr": "1",
-                    "Cookie": this.ck
+                    "Cookie": "JSESSIONID=" + this.ck
                 },
-                body: "{}"
+                body: JSON.stringify({})
             }
-
             let { body: result } = await $.httpRequest(options);
-
-            if (result && result.code == 200) {
-                let awardMsg = result.data?.awardPoints ? `+${result.data.awardPoints}积分` : '成功';
-                this.signMessage = `✅ 签到${awardMsg}`;
-                $.log(`[账号${this.index}] ${this.signMessage}`);
-                this.signStatus = true;
-            } else {
-                this.signMessage = `❌ 签到失败: ${result?.message || '未知错误'}`;
-                $.log(`[账号${this.index}] ${this.signMessage}`);
+            if(result.code == "200"){
+                $.log(`当前积分[${result.data.pointsBalance}]，会员等级[${result.data.gradeName}]，会员名[${result.data.memberName}]`)
+            }else {
+                console.log(result);
             }
-        } catch (e) {
-            $.log(`[账号${this.index}] ❌ 签到异常: ${e.message}`);
-            this.signMessage = `签到异常: ${e.message}`;
-        }
-    }
 
-    getSummary() {
-        return `账号${this.index}: ${this.signMessage || (this.signStatus ? '已签到' : '未签到')}`;
+        } catch (e) {
+            console.log(e);
+        }
     }
 }
 
 async function start() {
+    let taskall = [];
     for (let user of userList) {
         if (user.ckStatus) {
-            await user.main();
+            taskall.push(await user.main());
         }
     }
-
-    let summary = [];
-    for (let user of userList) {
-        summary.push(user.getSummary());
-    }
-    if (summary.length > 0) {
-        $.log("\n========== 签到汇总 ==========");
-        summary.forEach(s => $.log(s));
-    }
+    await Promise.all(taskall);
 }
 
 !(async () => {
@@ -164,32 +114,31 @@ async function start() {
     if (userList.length > 0) {
         await start();
     }
-    await $.SendMsg($.logs.join("\n"));
+    await $.SendMsg($.logs.join("\n"))
 })()
-.catch((e) => console.log(e))
-.finally(() => $.done());
+    .catch((e) => console.log(e))
+    .finally(() => $.done());
 
+//********************************************************
+/**
+ * 变量检查与处理
+ * @returns
+ */
 async function checkEnv() {
     let userCookie = ($.isNode() ? process.env[ckName] : $.getdata(ckName)) || "";
     if (userCookie) {
         let e = envSplitor[0];
-        for (let o of envSplitor) {
+        for (let o of envSplitor)
             if (userCookie.indexOf(o) > -1) {
                 e = o;
                 break;
             }
-        }
-        for (let n of userCookie.split(e)) {
-            if (n && n.trim()) {
-                userList.push(new UserInfo(n.trim()));
-            }
-        }
+        for (let n of userCookie.split(e)) n && userList.push(new UserInfo(n));
     } else {
-        console.log("未找到CK，请设置环境变量 " + ckName);
-        return false;
+        console.log("未找到CK");
+        return;
     }
-    console.log(`共找到${userList.length}个账号`);
-    return true;
+    return console.log(`共找到${userList.length}个账号`), true; //true == !0
 }
 
 /////////////////////////////////////////////////////////////////////////////////////
@@ -359,9 +308,9 @@ function Env(t, s) {
             }
         }
         /**
-        * @param {Object} options
-        * @returns {String} 将 Object 对象 转换成 queryStr: key=val&name=senku
-        */
+         * @param {Object} options
+         * @returns {String} 将 Object 对象 转换成 queryStr: key=val&name=senku
+         */
         queryStr(options) {
             return Object.entries(options)
                 .map(([key, value]) => `${key}=${typeof value === 'object' ? JSON.stringify(value) : value}`)
@@ -467,18 +416,18 @@ function Env(t, s) {
                 S: new Date().getMilliseconds(),
             };
             /(y+)/.test(t) &&
-                (t = t.replace(
-                    RegExp.$1,
-                    (new Date().getFullYear() + "").substr(4 - RegExp.$1.length)
-                ));
+            (t = t.replace(
+                RegExp.$1,
+                (new Date().getFullYear() + "").substr(4 - RegExp.$1.length)
+            ));
             for (let e in s)
                 new RegExp("(" + e + ")").test(t) &&
-                    (t = t.replace(
-                        RegExp.$1,
-                        1 == RegExp.$1.length
-                            ? s[e]
-                            : ("00" + s[e]).substr(("" + s[e]).length)
-                    ));
+                (t = t.replace(
+                    RegExp.$1,
+                    1 == RegExp.$1.length
+                        ? s[e]
+                        : ("00" + s[e]).substr(("" + s[e]).length)
+                ));
             return t;
         }
         msg(s = t, e = "", i = "", o) {
@@ -486,22 +435,22 @@ function Env(t, s) {
                 !t || (!this.isLoon() && this.isSurge())
                     ? t
                     : "string" == typeof t
+                    ? this.isLoon()
+                        ? t
+                        : this.isQuanX()
+                            ? { "open-url": t }
+                            : void 0
+                    : "object" == typeof t && (t["open-url"] || t["media-url"])
                         ? this.isLoon()
-                            ? t
+                            ? t["open-url"]
                             : this.isQuanX()
-                                ? { "open-url": t }
+                                ? t
                                 : void 0
-                        : "object" == typeof t && (t["open-url"] || t["media-url"])
-                            ? this.isLoon()
-                                ? t["open-url"]
-                                : this.isQuanX()
-                                    ? t
-                                    : void 0
-                            : void 0;
+                        : void 0;
             this.isMute ||
-                (this.isSurge() || this.isLoon()
-                    ? $notification.post(s, e, i, h(o))
-                    : this.isQuanX() && $notify(s, e, i, h(o)));
+            (this.isSurge() || this.isLoon()
+                ? $notification.post(s, e, i, h(o))
+                : this.isQuanX() && $notify(s, e, i, h(o)));
             let logs = ['', '==============📣系统通知📣=============='];
             logs.push(t);
             e ? logs.push(e) : '';
@@ -530,7 +479,7 @@ function Env(t, s) {
                 `\ud83d\udd14${this.name}, \u7ed3\u675f! \ud83d\udd5b ${e} \u79d2`
             ),
                 this.log(),
-                (this.isSurge() || this.isQuanX() || this.isLoon()) && $done(t);
+            (this.isSurge() || this.isQuanX() || this.isLoon()) && $done(t);
         }
     })(t, s);
 }

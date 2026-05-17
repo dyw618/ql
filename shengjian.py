@@ -108,15 +108,14 @@ def sign_in(token, sign_no):
     try:
         resp = requests.put(url, headers=headers, json=data, timeout=30)
         resp_json = resp.json()
-        myprint(f"第{sign_no}次签到响应状态码: {resp.status_code}")
-        myprint(f"第{sign_no}次签到响应内容: {resp_json}")
+        prize_name = resp_json['data']['prizeName']
 
         # 根据常见签到接口格式判断成功与否
         if resp.status_code == 200:
             code = resp_json.get("code")
             if code == 200 or code == 0 or code is None:
                 msg = resp_json.get("msg") or resp_json.get("message") or "签到成功"
-                return True, f"第{sign_no}次签到 {msg}"
+                return True, f"第{sign_no}次签到 {msg}，获得 {prize_name}"
             else:
                 return False, f"第{sign_no}次签到失败 {resp_json.get('msg', f'未知错误 code={code}')}"
         else:

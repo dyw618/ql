@@ -10,7 +10,7 @@ Cookie获取：微信小程序抓包获取 Cookie 请求头
 - ICBC_RANDOM_DELAY：随机延迟最大秒数（可选，默认300秒）
 - ICBC_ENABLE_RANDOM：是否启用随机延迟（可选，默认true）
 
-cron: 0 10 * * *
+cron: 30 9 * * *
 const $ = new Env("工行刷卡金天天抽小程序");
 """
 import os
@@ -107,38 +107,124 @@ def lottery(cookie):
         return {"error": str(e), "code": -1}
 
 def extract_reward_info(result):
-    """从响应中提取奖励信息"""
-    # 成功抽奖的情况
-    if result.get("code") == 0:
-        data = result.get("data", {})
-        if data.get("returnCode") == 200000:  # 抽奖成功
-            reward_name = data.get("returnMsg", "")
-            # 尝试从返回消息中提取奖励
-            if "获得" in reward_name:
-                return "success", reward_name
-            else:
-                return "success", "抽奖成功，请查看奖品"
-        elif data.get("returnCode") == 200004:  # 已经领取过
-            return "already", data.get("returnMsg", "今日已抽奖")
+    """
+    从响应中提取奖励信息
+    返回: (status, message, reward_detail)
+    status: success/already/fail/error
+    """
+    # 网络错误
+    if "error" in result:
+        return "error", result.get("error", "请求失败"), None
+
+    # API返回错误
+    if result.get("code") != 0:
+        return "fail", result.get("message", result.get("msg", "抽奖失败")), None
+
+    data = result.get("data", {})
+
+    # 检查 suc 标识
+    if data.get("suc") == True:
+        # 获取详细奖励信息
+        inner_data = data.get("data", {})
+        goods_name = inner_data.get("goodsSimpleName", "")
+        prize_msg = inner_data.get("msg", "")
+
+        # 解析子奖品列表
+        sub_prizes = inner_data.get("subPrizeList", [])
+        if sub_prizes:
+            rewards = []
+            for prize in sub_prizes:
+                prize_name = prize.get("goodsSimpleName", "")
+                prize_num = prize.get("prizeNums", 1)
+                rewards.append(f"{prize_name} x{prize_num}")
+            reward_detail = " + ".join(rewards)
         else:
-            return "fail", data.get("returnMsg", "未知状态")
-    elif "error" in result:
-        return "error", result.get("error", "请求失败")
+            reward_detail = prize_msg or goods_name or "获得奖励"
+
+        return "success", "抽奖成功", reward_detail
+
+    # 检查 returnCode
+    return_code = data.get("returnCode")
+    return_msg = data.get("returnMsg", "")
+
+    if return_code == 200004:  # 已经领取过
+        return "already", return_msg or "今日已抽奖", None
+    elif return_code == 0:  # 新版成功标志
+        # 从 data.data 中获取奖励
+        inner_data = data.get("data", {})
+        goods_name = inner_data.get("goodsSimpleName", "")
+        prize_msg = inner_data.get("msg", "")
+
+        # 解析子奖品
+        sub_prizes = inner_data.get("subPrizeList", [])
+        if sub_prizes:
+            rewards = []
+            for prize in sub_prizes:
+                prize_name = prize.get("goodsSimpleName", "")
+                prize_num = prize.get("prizeNums", 1)
+                rewards.append(f"{prize_name} x{prize_num}")
+            reward_detail = " + ".join(rewards)
+        else:
+            reward_detail = prize_msg or goods_name or "获得奖励"
+
+        return "success", "抽奖成功", reward_detail
+    elif return_code == 200000:  # 旧版成功标志
+        reward_detail = return_msg or "获得奖励"
+        if "获得" in reward_detail:
+            reward_detail = reward_detail.replace("获得", "")
+        return "success", "抽奖成功", reward_detail
+    elif return_code == 200005:  # 活动未开始或已结束
+        return "fail", return_msg or "活动未开始或已结束", None
+    elif return_code == 200006:  # 已达上限
+        return "already", return_msg or "已达抽奖上限", None
     else:
-        return "fail", result.get("message", result.get("msg", "抽奖失败"))
+        return "fail", return_msg or f"未知状态(code:{return_code})", None
 
 def extract_uid(cookie):
     """提取uid"""
     import re
     match = re.search(r'uid=([^;]+)', cookie)
     if match:
-        return match.group(1)[:20] + "..."
+        uid = match.group(1)
+        if len(uid) > 20:
+            return uid[:15] + "..."
+        return uid
+    # 尝试提取其他标识
+    match = re.search(r'personId=([^;]+)', cookie)
+    if match:
+        pid = match.group(1)
+        if len(pid) > 20:
+            return pid[:15] + "..."
+        return pid
     return "未知"
+
+def format_reward_message(reward_detail):
+    """格式化奖励消息"""
+    if not reward_detail:
+        return ""
+
+    # 处理不同的奖励格式
+    if "刷卡金" in reward_detail:
+        # 提取金额
+        import re
+        amount_match = re.search(r'(\d+\.?\d*)元', reward_detail)
+        if amount_match:
+            return f"💰 {reward_detail}"
+        return f"🎁 {reward_detail}"
+    elif "微信立减金" in reward_detail or "立减金" in reward_detail:
+        return f"💳 {reward_detail}"
+    elif "积分" in reward_detail:
+        return f"⭐ {reward_detail}"
+    else:
+        return f"🎁 {reward_detail}"
 
 def main():
     log_print("=" * 50)
     log_print("🏆 工行刷卡金天天抽 - 自动抽奖")
     log_print(f"活动ID: {ACT_ID}")
+    log_print(f"随机延迟: {'开启' if ENABLE_RANDOM else '关闭'}")
+    if ENABLE_RANDOM:
+        log_print(f"最大延迟: {MAX_RANDOM_DELAY}秒")
     log_print("=" * 50)
 
     # 随机延迟
@@ -159,6 +245,7 @@ def main():
     already_count = 0
     fail_count = 0
     results = []
+    success_rewards = []  # 记录成功获得的奖励
 
     for idx, cookie in enumerate(cookies, 1):
         log_print(f"\n{'=' * 40}")
@@ -168,15 +255,22 @@ def main():
 
         # 执行抽奖
         result = lottery(cookie)
-        log_print(f"原始响应: {json.dumps(result, ensure_ascii=False)}")
+
+        # 调试：打印完整响应（可选，去掉注释可查看）
+        # log_print(f"原始响应: {json.dumps(result, ensure_ascii=False)}")
 
         # 解析结果
-        status, msg = extract_reward_info(result)
+        status, msg, reward_detail = extract_reward_info(result)
 
         if status == "success":
-            log_print(f"🎉 {msg}")
+            reward_text = format_reward_message(reward_detail) if reward_detail else f"🎉 {msg}"
+            log_print(f"✅ {reward_text}")
             success_count += 1
-            results.append(f"账号{idx}: 🎉 {msg}")
+            results.append(f"账号{idx}: ✅ {reward_text}")
+            if reward_detail:
+                success_rewards.append(f"账号{idx}: {reward_detail}")
+            else:
+                success_rewards.append(f"账号{idx}: 抽奖成功")
         elif status == "already":
             log_print(f"⚠️ {msg}")
             already_count += 1
@@ -199,15 +293,42 @@ def main():
     log_print(f"\n{'=' * 50}")
     log_print(f"📊 执行统计:")
     log_print(f"   总账号数: {len(cookies)}")
-    log_print(f"   今日新抽奖: {success_count}")
-    log_print(f"   今日已抽过: {already_count}")
-    log_print(f"   失败: {fail_count}")
+    log_print(f"   ✅ 抽奖成功: {success_count}")
+    log_print(f"   ⚠️ 今日已抽过: {already_count}")
+    log_print(f"   ❌ 失败: {fail_count}")
+
+    if success_rewards:
+        log_print(f"\n🎁 获得奖励:")
+        for reward in success_rewards:
+            log_print(f"   {reward}")
+
     log_print("=" * 50)
 
     # 发送通知
     if results:
-        title = f"工行抽奖 | 新得{success_count} | 已抽{already_count} | 失败{fail_count}"
-        content = "\n".join(results)
+        # 构建通知标题
+        if success_count > 0:
+            title = f"🎉 工行抽奖成功 | 获得{success_count}个奖励"
+        elif already_count > 0:
+            title = f"⚠️ 工行抽奖 | 已抽{already_count}个"
+        else:
+            title = f"❌ 工行抽奖失败 | 失败{fail_count}个"
+
+        # 构建通知内容
+        content_lines = []
+        content_lines.append(f"📅 时间: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+        content_lines.append(f"📊 统计: 成功{success_count} | 已抽{already_count} | 失败{fail_count}")
+
+        if success_rewards:
+            content_lines.append(f"\n🎁 获得奖励:")
+            for reward in success_rewards:
+                content_lines.append(f"  {reward}")
+
+        content_lines.append(f"\n📝 详细结果:")
+        for result in results:
+            content_lines.append(f"  {result}")
+
+        content = "\n".join(content_lines)
         send_notification(title, content)
 
 if __name__ == "__main__":
