@@ -56,6 +56,7 @@ class Task {
     async run() {
 
         await this.signIn()
+        await this.getPoints()
     }
 
     async signIn() {
@@ -114,19 +115,19 @@ class Task {
     .finally(() => $.done());
 
 async function getNotice() {
-	try {
-		let options = {
-			url: ``,
-			headers: {
-				"User-Agent": defaultUserAgent,
-			},
+    try {
+        let options = {
+            url: ``,
+            headers: {
+                "User-Agent": defaultUserAgent,
+            },
             timeout:3000
-		}
-		let {
-			data: res
-		} = await axios.request(options);
-		$.log(res)
-		return res
-	} catch (e) {}
+        }
+        let {
+            data: res
+        } = await axios.request(options);
+        $.log(res)
+        return res
+    } catch (e) {}
 
 }

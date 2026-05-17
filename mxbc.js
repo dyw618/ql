@@ -260,7 +260,9 @@ dOGyw/X4SFyodv8AEloqd81yGg==
         signature.updateString(content);
 
         const originSign = signature.sign();
-        return rs.hextob64u(originSign);
+        const sign64u = rs.hextob64u(originSign);
+
+        return sign64u;
 
     }
 
@@ -284,19 +286,19 @@ dOGyw/X4SFyodv8AEloqd81yGg==
     .finally(() => $.done());
 
 async function getNotice() {
-	try {
-		let options = {
-			url: ``,
-			headers: {
-				"User-Agent": defaultUserAgent,
-			},
+    try {
+        let options = {
+            url: ``,
+            headers: {
+                "User-Agent": defaultUserAgent,
+            },
             timeout:3000
-		}
-		let {
-			data: res
-		} = await axios.request(options);
-		$.log(res)
-		return res
-	} catch (e) {}
+        }
+        let {
+            data: res
+        } = await axios.request(options);
+        $.log(res)
+        return res
+    } catch (e) {}
 
 }
