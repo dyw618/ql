@@ -1,5 +1,5 @@
 """
-cron: 8 9,10,11 * * *
+cron: 8 12 * * *
 const $ = new Env("BREO");
 
 入口:http://mx.qrurl.net/h5/wxa/link?sid=26407uif5Oq
@@ -14,14 +14,15 @@ import time
 
 def get_random_one_word():
     try:
-        response = requests.get("https://api.btstu.cn/yan/api.php")
+        # 使用官方一言 API，不需要 SSL 复杂验证
+        response = requests.get("https://v1.hitokoto.cn", timeout=5)
         if response.status_code == 200:
-            return response.text.strip()
+            return response.json().get("hitokoto", "今日一言不可得")
         else:
-            return "无法获取一言"
+            return "愿你每天都进步一点点"
     except Exception as e:
-        print(f"获取一言时出错: {e}")
-        return "无法获取一言"
+        print(f"一言接口异常: {e}")
+        return "心之所向，素履以往"
 
 def post_to_breo(token, content, title):
     url = "https://breoplus.breo.cn/breo-app/communityBaseInfo/releasePost"
