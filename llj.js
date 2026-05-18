@@ -5,8 +5,8 @@
 @Description:  立乐家会员俱乐部
 cron: 8 12 * * *
 ------------------------------------------
-#Notice:   
-变量名 lljtoken 填写的是 
+#Notice:
+变量名 lljtoken 填写的是
 域名https://clubwx.hm.liby.com.cn/miniprogram  请求头 unionid # x-wxb9f68ca2da513bb2-token
 多账户&或换行
 ⚠️【免责声明】
@@ -22,7 +22,7 @@ cron: 8 12 * * *
 
 const {
     Env
-} = require("../tools/env")
+} = require("./tools/env")
 const $ = new Env("立乐家会员俱乐部");
 let ckName = `lljtoken`;
 const strSplitor = "#";
