@@ -72,14 +72,17 @@ class Task {
     async run() {
         await this.getTreadList()
         if (this.threadId && this.postId) {
-            await this.likePost(this.threadId, this.postId)
-            await $.wait(5000)
-            await this.sharePost(this.threadId)
-            await $.wait(5000)
+            for (let i = 0; i < 4; i++) {
+                await this.likePost(this.threadId, this.postId)
+                await $.wait(5000)
+                await this.sharePost(this.threadId)
+                await $.wait(5000)
+            }
+            for (let i = 0; i < 2; i++) {
+                await this.viewPost(this.threadId)
+                await $.wait(5000)
 
-            await this.viewPost(this.threadId)
-            await $.wait(5000)
-
+            }
             await this.commonPost(this.threadId)
         }
         await this.getDrawNum()
