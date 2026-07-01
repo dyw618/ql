@@ -16,7 +16,6 @@ const $ = new Env("工行刷卡金天天抽小程序");
 import os
 import time
 import random
-import json
 from datetime import datetime
 
 # 使用 curl_cffi 模拟浏览器
@@ -27,18 +26,21 @@ except ImportError:
     CURL_CFI_AVAILABLE = False
     import requests
     import urllib3
+
     urllib3.disable_warnings()
 
 # 通知模块
 try:
     from notify import send
+
     NOTIFY_ENABLED = True
 except ImportError:
     NOTIFY_ENABLED = False
 
 # 配置
-CORP_ID = "2000000882"
-ACT_ID = "LOT20260331140621284295"
+CORP_ID = int(os.getenv("CORP_ID", "2000000882"))
+ACT_ID = os.getenv("ACT_ID", "LOT20260331140621284295")
+
 LOTTERY_URL = f"https://chp.icbc.com.cn/bmcs/api-bmcs/v3/lott/h5/lottery?corpId={CORP_ID}"
 ACTIVITY_DETAIL_URL = f"https://chp.icbc.com.cn/bmcs/api-bmcs/v3/lott/h5/getActivityDetail?corpId={CORP_ID}&actId={ACT_ID}&roccSwt=0"
 
