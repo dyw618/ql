@@ -1,8 +1,10 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
 """
 cron: 8 12 * * *
 const $ = new Env("BREO");
 
-入口:http://mx.qrurl.net/h5/wxa/link?sid=26407uif5Oq
 抓包breoplus.breo.cn的域名下的token，多账号换行分割
 账号变量名:BREO
 """
@@ -11,6 +13,39 @@ import requests
 import json
 import os
 import time
+
+# ---------- 统一通知模块加载 ----------
+has_notify = False
+send_msg = None
+try:
+    from notify import send
+
+    has_notify = True
+    print("✅ 已加载 notify.py 通知模块")
+except ImportError:
+    print("⚠️ 未找到 notify.py，通知功能将不可用")
+
+# ---------- 日志收集 ----------
+all_logs = []
+
+
+def myprint(msg):
+    """收集并打印日志"""
+    print(msg)
+    all_logs.append(str(msg) + "\n")
+
+
+def notify_user(title, content):
+    """统一通知推送"""
+    if has_notify:
+        try:
+            send(title, content)
+            print(f"✅ 通知发送完成: {title}")
+        except Exception as e:
+            print(f"❌ 通知发送失败: {e}")
+    else:
+        print(f"📢 {title}\n📄 {content}")
+
 
 def get_random_one_word():
     try:
@@ -21,7 +56,7 @@ def get_random_one_word():
         else:
             return "愿你每天都进步一点点"
     except Exception as e:
-        print(f"一言接口异常: {e}")
+        myprint(f"一言接口异常: {e}")
         return "心之所向，素履以往"
 
 def post_to_breo(token, content, title):
@@ -50,18 +85,18 @@ def post_to_breo(token, content, title):
         if response.status_code == 200:
             result = response.json()
             if result.get("success", False):
-                print("✅ 发帖成功！")
-                print(f"帖子 ID: {result['result']['id']}")
-                print(f"帖子标题: {result['result']['title']}")
+                myprint("✅ 发帖成功！")
+                myprint(f"帖子 ID: {result['result']['id']}")
+                myprint(f"帖子标题: {result['result']['title']}")
                 return result["result"]["id"]
             else:
-                print(f"❌ 发帖失败，错误信息：{result.get('message', '未知错误')}")
+                myprint(f"❌ 发帖失败，错误信息：{result.get('message', '未知错误')}")
                 return None
         else:
-            print(f"❌ 请求失败，状态码：{response.status_code}")
+            myprint(f"❌ 请求失败，状态码：{response.status_code}")
             return None
     except Exception as e:
-        print(f"❌ 请求错误: {e}")
+        myprint(f"❌ 请求错误: {e}")
         return None
 
 def collect_post(token, post_id):
@@ -84,15 +119,15 @@ def collect_post(token, post_id):
         if response.status_code == 200:
             result = response.json()
             if result.get("success", False):
-                print("✅ 收藏成功！")
-                print(f"获得点数: {result['result']['point']}")
-                print(f"成长值: {result['result']['grow']}")
+                myprint("✅ 收藏成功！")
+                myprint(f"获得点数: {result['result']['point']}")
+                myprint(f"成长值: {result['result']['grow']}")
             else:
-                print(f"❌ 收藏失败，错误信息：{result.get('message', '未知错误')}")
+                myprint(f"❌ 收藏失败，错误信息：{result.get('message', '未知错误')}")
         else:
-            print(f"❌ 请求失败，状态码：{response.status_code}")
+            myprint(f"❌ 请求失败，状态码：{response.status_code}")
     except Exception as e:
-        print(f"❌ 请求错误: {e}")
+        myprint(f"❌ 请求错误: {e}")
 
 def comment_post(token, post_id):
     for _ in range(2):  # 评论2次
@@ -118,16 +153,16 @@ def comment_post(token, post_id):
             if response.status_code == 200:
                 result = response.json()
                 if result.get("success", False):
-                    print("✅ 评论成功！")
-                    print(f"评论内容: {result['result']['rootOutVO']['commentText']}")
-                    print(f"获得点数: {result['result']['point']}")
-                    print(f"成长值: {result['result']['grow']}")
+                    myprint("✅ 评论成功！")
+                    myprint(f"评论内容: {result['result']['rootOutVO']['commentText']}")
+                    myprint(f"获得点数: {result['result']['point']}")
+                    myprint(f"成长值: {result['result']['grow']}")
                 else:
-                    print(f"❌ 评论失败，错误信息：{result.get('message', '未知错误')}")
+                    myprint(f"❌ 评论失败，错误信息：{result.get('message', '未知错误')}")
             else:
-                print(f"❌ 请求失败，状态码：{response.status_code}")
+                myprint(f"❌ 请求失败，状态码：{response.status_code}")
         except Exception as e:
-            print(f"❌ 请求错误: {e}")
+            myprint(f"❌ 请求错误: {e}")
         time.sleep(1)  # 避免频繁请求
 
 def browse_mall(token):
@@ -146,15 +181,15 @@ def browse_mall(token):
         if response.status_code == 200:
             result = response.json()
             if result.get("success", False):
-                print("✅ 浏览商城成功！")
-                print(f"获得点数: {result['result']['point']}")
-                print(f"成长值: {result['result']['grow']}")
+                myprint("✅ 浏览商城成功！")
+                myprint(f"获得点数: {result['result']['point']}")
+                myprint(f"成长值: {result['result']['grow']}")
             else:
-                print(f"❌ 浏览商城失败，错误信息：{result.get('message', '未知错误')}")
+                myprint(f"❌ 浏览商城失败，错误信息：{result.get('message', '未知错误')}")
         else:
-            print(f"❌ 请求失败，状态码：{response.status_code}")
+            myprint(f"❌ 请求失败，状态码：{response.status_code}")
     except Exception as e:
-        print(f"❌ 请求错误: {e}")
+        myprint(f"❌ 请求错误: {e}")
 
 def punch_in(token):
     url = "https://breoplus.breo.cn/breo-app/user/po-task-info/punch"
@@ -174,47 +209,55 @@ def punch_in(token):
         if response.status_code == 200:
             result = response.json()
             if result.get("success", False):
-                print("✅ 签到成功！")
-                print(f"获得点数: {result['result']['point']}")
-                print(f"成长值: {result['result']['grow']}")
+                myprint("✅ 签到成功！")
+                myprint(f"获得点数: {result['result']['point']}")
+                myprint(f"成长值: {result['result']['grow']}")
             else:
-                print(f"❌ 签到失败，错误信息：{result.get('message', '未知错误')}")
+                myprint(f"❌ 签到失败，错误信息：{result.get('message', '未知错误')}")
         else:
-            print(f"❌ 请求失败，状态码：{response.status_code}")
+            myprint(f"❌ 请求失败，状态码：{response.status_code}")
     except Exception as e:
-        print(f"❌ 请求错误: {e}")
+        myprint(f"❌ 请求错误: {e}")
+
 
 if __name__ == "__main__":
-    # 获取公告
-    #get_proclamation()
+    try:
+        # 从环境变量读取 token
+        tokens = os.getenv("BREO", "").splitlines()
 
-    # 从环境变量读取 token
-    tokens = os.getenv("BREO", "").splitlines()
+        if not tokens:
+            myprint("❌ 未检测到账号信息（环境变量 BREO），退出脚本。")
+            notify_user("BREO任务失败", "未检测到账号信息（环境变量 BREO）")
+        else:
+            myprint("=开始执行任务=")
+            for i, token in enumerate(tokens, 1):
+                if token.strip():  # 跳过空行
+                    myprint(f"\n-------------- 账号 {i} 开始 --------------")
+                    myprint("🚀 正在签到...")
+                    punch_in(token)
 
-    if not tokens:
-        print("❌ 未检测到 账号信息，退出脚本。")
-    else:
-        print("=============== 开始执行任务 ===============")
-        for i, token in enumerate(tokens, 1):
-            if token.strip():  # 跳过空行
-                print(f"\n-------------- 账号 {i} 开始 --------------")
-                print("🚀 正在签到...")
-                punch_in(token)
+                    myprint("\n📝 正在发布帖子...")
+                    post_id = post_to_breo(token, "这是一个自动发布的帖子", "自动化测试")
+                    if post_id:
+                        myprint("\n⭐ 正在收藏帖子...")
+                        collect_post(token, post_id)
 
-                print("\n📝 正在发布帖子...")
-                post_id = post_to_breo(token, "这是一个自动发布的帖子", "自动化测试")
-                if post_id:
-                    print("\n⭐ 正在收藏帖子...")
-                    collect_post(token, post_id)
+                        myprint("\n💬 正在评论帖子...")
+                        comment_post(token, post_id)
+                    else:
+                        myprint("❌ 发帖失败，跳过后续操作。")
 
-                    print("\n💬 正在评论帖子...")
-                    comment_post(token, post_id)
-                else:
-                    print("❌ 发帖失败，跳过后续操作。")
+                    myprint("\n🛒 正在浏览商城...")
+                    browse_mall(token)
 
-                print("\n🛒 正在浏览商城...")
-                browse_mall(token)
+                    myprint(f"-------------- 账号 {i} 结束 --------------")
 
-                print(f"-------------- 账号 {i} 结束 --------------")
+            myprint("\n=所有任务执行完毕=")
 
-        print("\n=============== 所有任务执行完毕 ===============")
+        # 发送通知
+        notify_user("BREO小程序签到", ''.join(all_logs))
+
+    except Exception as e:
+        error_msg = f"脚本运行异常: {str(e)}"
+        myprint(error_msg)
+        notify_user("BREO任务异常", error_msg)
