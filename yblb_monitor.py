@@ -113,8 +113,7 @@ def main():
             else:
                 stored = read_stored_max()
                 if current_max > stored:
-                    name = item.get("name", "") if item else ""
-                    content = f"🚀 新增区服！\nID: {current_max}\n名称: {name}"
+                    content = f"🚀 一步两步新增区服！ID: {current_max}"
                     send_notify("游戏新区服提醒", content)
                     print(content)
                     write_stored_max(current_max)
