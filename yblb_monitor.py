@@ -7,6 +7,8 @@
 
 环境变量：
     yblb_CK - 必填，完整的接口请求URL后面的参数（含所有参数，如ts、sign等）
+cron: @once
+const $ = new Env("一步两步新区监测");
 """
 
 import os
