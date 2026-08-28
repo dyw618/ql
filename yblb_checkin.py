@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 """
-一步两步游戏 每日签到（单账户，仅需 Token）
+一步两步营地 每日签到（单账户，仅需 Token）
 cron: 8 20 * * *
 const $ = new Env("一步两步签到");
 
@@ -42,7 +42,7 @@ def send_notify(title, content):
 TOKEN = os.getenv("FY_TOKEN")
 if not TOKEN:
     print("❌ 未设置 FY_TOKEN")
-    send_notify("签到失败", "请设置 FY_TOKEN")
+    send_notify("一步两步营地签到失败", "请设置 FY_TOKEN")
     sys.exit(1)
 
 
@@ -64,7 +64,7 @@ def decode_jwt_payload(token):
 USER_ID = decode_jwt_payload(TOKEN)
 if not USER_ID:
     print("❌ 无法从 Token 中解析 user_id，请检查 Token 是否有效")
-    send_notify("一步两步签到失败", "Token 无效，无法解析 user_id")
+    send_notify("一步两步营地签到失败", "Token 无效，无法解析 user_id")
     sys.exit(1)
 
 # 固定请求头（抓包值）
@@ -132,7 +132,7 @@ def main():
     sign_data = query_sign_status()
     if sign_data is None:
         print("❌ 获取签到状态失败，退出")
-        send_notify("一步两步签到失败", "获取签到状态失败")
+        send_notify("一步两步营地签到失败", "获取签到状态失败")
         return
 
     has_signed = sign_data.get("has_signed_today", False)
@@ -146,7 +146,7 @@ def main():
         reward_text = f"，第{cum_days}天奖励：{reward}" if reward else ""
         msg = f"今日已签到，累计 {cum_days} 天{reward_text}"
         print(f"✅ {msg}")
-        send_notify("签到结果", msg)
+        send_notify("一步两步营地签到结果", msg)
         return
 
     # 2. 执行签到
@@ -164,10 +164,10 @@ def main():
         else:
             final_msg = f"{result}，累计签到 {cum_days} 天"
         print(f"✅ {final_msg}")
-        send_notify("一步两步签到成功", final_msg)
+        send_notify("一步两步营地签到成功", final_msg)
     else:
         print(f"❌ 签到失败: {result}")
-        send_notify("一步两步签到失败", result)
+        send_notify("一步两步营地签到失败", result)
 
 
 if __name__ == "__main__":
@@ -176,4 +176,4 @@ if __name__ == "__main__":
     except Exception as e:
         error_msg = f"脚本异常: {e}"
         print(error_msg)
-        send_notify("一步两步签到异常", error_msg)
+        send_notify("一步两步营地签到异常", error_msg)
