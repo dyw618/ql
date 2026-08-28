@@ -8,7 +8,7 @@ const $ = new Env("老木社区签到");
 
 环境变量：
     lmyx_CK  - 必填，从抓包中获取的 Cookie 字符串（完整复制）
-                      多账号用换行分隔，每行一个 Cookie
+              多账号用换行分隔，每行一个 Cookie
 """
 
 import os
@@ -24,7 +24,6 @@ urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 has_notify = False
 try:
     from notify import send
-
     has_notify = True
 except ImportError:
     pass
@@ -46,7 +45,7 @@ def sign_in(cookie):
     url = "https://laomuxs.cn/wp-admin/admin-ajax.php"
     headers = {
         "Accept": "application/json, text/javascript, */*; q=0.01",
-        "Accept-Encoding": "gzip, deflate, br, zstd",
+        "Accept-Encoding": "gzip, deflate",  # 移除 br 和 zstd
         "Accept-Language": "zh-CN,zh-TW;q=0.9,zh;q=0.8,en-US;q=0.7,en;q=0.6",
         "Connection": "keep-alive",
         "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
@@ -64,7 +63,6 @@ def sign_in(cookie):
         resp_json = resp.json()
         if resp.status_code == 200 and resp_json.get("error") is False:
             msg = resp_json.get("msg", "")
-            # msg = msg.encode('utf-8').decode('unicode_escape')
             points = resp_json.get("data", {}).get("points", 0)
             integral = resp_json.get("data", {}).get("integral", 0)
             continuous = resp_json.get("continuous_day", 0)
@@ -72,7 +70,6 @@ def sign_in(cookie):
             return True, msg, detail
         else:
             err = resp_json.get("msg", "未知错误")
-            # err = err.encode('utf-8').decode('unicode_escape')
             return False, f"签到失败: {err}", ""
     except Exception as e:
         return False, f"请求异常: {str(e)}", ""
@@ -92,11 +89,11 @@ def main():
     if success:
         print(f"✅ {msg}")
         print(f"📊 {detail}")
+        content = f"{msg}\n{detail}"
     else:
         print(f"❌ {msg}")
+        content = msg
 
-    # 发送通知（包含完整信息）
-    content = f"{msg}\n{detail}" if success else msg
     send_notify("老木社区签到结果", content)
 
 
