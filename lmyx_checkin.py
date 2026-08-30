@@ -11,8 +11,10 @@ const $ = new Env("老木社区签到");
               多账号用换行分隔，每行一个 Cookie
 """
 
+import json
 import os
 import sys
+import time
 
 import requests
 import urllib3
@@ -60,8 +62,24 @@ def sign_in(cookie):
 
     try:
         resp = requests.post(url, headers=headers, data=data, timeout=30, verify=False)
-        resp_json = resp.json()
-        if resp.status_code == 200 and resp_json.get("error") is False:
+
+        if resp.status_code != 200:
+            return False, f"HTTP 状态码 {resp.status_code}", ""
+
+        content_type = resp.headers.get('content-type', '')
+        if 'application/json' not in content_type:
+            return False, f"响应非 JSON (Content-Type: {content_type})", ""
+
+        try:
+            resp_json = resp.json()
+        except json.JSONDecodeError as e:
+            return False, f"JSON 解析失败: {e}\n响应内容前200字符: {resp.text[:200]}", ""
+
+        if not isinstance(resp_json, dict):
+            return False, f"响应类型错误: {type(resp_json)}，内容片段: {resp.text[:200]}", ""
+
+        # 业务判断
+        if resp_json.get("error") is False:
             msg = resp_json.get("msg", "")
             points = resp_json.get("data", {}).get("points", 0)
             integral = resp_json.get("data", {}).get("integral", 0)
@@ -71,11 +89,15 @@ def sign_in(cookie):
         else:
             err = resp_json.get("msg", "未知错误")
             return False, f"签到失败: {err}", ""
+
+    except requests.exceptions.RequestException as e:
+        # 网络异常（包括超时、连接错误等）
+        return False, f"网络异常: {str(e)}", ""
     except Exception as e:
         return False, f"请求异常: {str(e)}", ""
 
 
-# ---------- 主函数 ----------
+# ---------- 主函数（含重试） ----------
 def main():
     cookie = os.getenv("lmyx_CK")
     if not cookie:
@@ -83,18 +105,39 @@ def main():
         send_notify("老木社区签到失败", "未设置环境变量 lmyx_CK")
         sys.exit(1)
 
-    print("========== 老木社区签到 ==========")
+    max_retries = 3
+    retry_interval = 600  # 10分钟（秒）
 
-    success, msg, detail = sign_in(cookie.strip())
-    if success:
-        print(f"✅ {msg}")
-        print(f"📊 {detail}")
-        content = f"{msg}\n{detail}"
-    else:
+    for attempt in range(1, max_retries + 1):
+        print(f"\n========== 老木社区签到 (尝试 {attempt}/{max_retries}) ==========")
+        success, msg, detail = sign_in(cookie.strip())
+
+        if success:
+            print(f"✅ {msg}")
+            print(f"📊 {detail}")
+            send_notify("老木社区签到结果", f"{msg}\n{detail}")
+            return
+
+        # 签到失败
         print(f"❌ {msg}")
-        content = msg
 
-    send_notify("老木社区签到结果", content)
+        # 判断是否因超时或网络问题导致
+        error_lower = msg.lower()
+        is_timeout = any(keyword in error_lower for keyword in ["timeout", "timed out", "connection"])
+
+        if is_timeout and attempt < max_retries:
+            print(f"⏰ 网络超时，等待 {retry_interval // 60} 分钟后重试...")
+            time.sleep(retry_interval)
+            continue
+        else:
+            # 非超时错误 或 已达最大重试次数
+            if is_timeout and attempt == max_retries:
+                print("❌ 多次重试后仍然超时，退出")
+            else:
+                # 其他业务错误（如 Cookie 失效），不重试
+                print("❌ 非网络错误，直接退出")
+            send_notify("老木社区签到失败", msg)
+            sys.exit(1)
 
 
 if __name__ == "__main__":
