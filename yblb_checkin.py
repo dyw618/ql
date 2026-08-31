@@ -21,7 +21,6 @@ import requests
 has_notify = False
 try:
     from notify import send
-
     has_notify = True
 except ImportError:
     pass
@@ -116,7 +115,7 @@ def do_sign():
 
 
 def get_gift_name(gifts, cum_days):
-    """从奖励列表中查找对应天数的奖励名称"""
+    """从奖励列表中查找对应天数的奖励名称，若不存在返回空字符串"""
     for gift in gifts:
         if gift.get("cum_days") == cum_days:
             return gift.get("gift_name", "")
@@ -137,14 +136,30 @@ def main():
 
     has_signed = sign_data.get("has_signed_today", False)
     cum_days = sign_data.get("cum_days", 0)
-    gifts = sign_data.get("gifts", [])  # 获取奖励列表
+    gifts = sign_data.get("gifts", [])
     print(f"累计签到天数: {cum_days}")
     print(f"今日已签到: {has_signed}")
 
+    # 打印完整奖励列表
+    if gifts:
+        print("📋 完整奖励列表：")
+        for gift in gifts:
+            print(f"  第{gift.get('cum_days')}天：{gift.get('gift_name')}")
+    else:
+        print("⚠️ 未获取到奖励列表")
+
+    # 获取今日奖励（如果有）
+    reward_today = get_gift_name(gifts, cum_days)
+    # 获取明日奖励（如果有）
+    reward_tomorrow = get_gift_name(gifts, cum_days + 1) if cum_days + 1 <= 31 else ""
+
     if has_signed:
-        reward = get_gift_name(gifts, cum_days)
-        reward_text = f"，第{cum_days}天奖励：{reward}" if reward else ""
-        msg = f"今日已签到，累计 {cum_days} 天{reward_text}"
+        msg_parts = [f"今日已签到，累计 {cum_days} 天"]
+        if reward_today:
+            msg_parts.append(f"第{cum_days}天奖励：{reward_today}")
+        if reward_tomorrow:
+            msg_parts.append(f"明日签到奖励：{reward_tomorrow}")
+        msg = "，".join(msg_parts)
         print(f"✅ {msg}")
         send_notify("一步两步营地签到结果", msg)
         return
@@ -158,9 +173,14 @@ def main():
         if new_data:
             new_days = new_data.get("cum_days", cum_days)
             new_gifts = new_data.get("gifts", [])
-            reward = get_gift_name(new_gifts, new_days)
-            reward_text = f"，第{new_days}天奖励：{reward}" if reward else ""
-            final_msg = f"{result}，累计签到 {new_days} 天{reward_text}"
+            reward_new_today = get_gift_name(new_gifts, new_days)
+            reward_new_tomorrow = get_gift_name(new_gifts, new_days + 1) if new_days + 1 <= 31 else ""
+            msg_parts = [result, f"累计签到 {new_days} 天"]
+            if reward_new_today:
+                msg_parts.append(f"第{new_days}天奖励：{reward_new_today}")
+            if reward_new_tomorrow:
+                msg_parts.append(f"明日签到奖励：{reward_new_tomorrow}")
+            final_msg = "，".join(msg_parts)
         else:
             final_msg = f"{result}，累计签到 {cum_days} 天"
         print(f"✅ {final_msg}")
