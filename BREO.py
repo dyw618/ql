@@ -9,14 +9,14 @@ const $ = new Env("BREO");
 账号变量名:BREO
 """
 
-import requests
 import json
 import os
 import time
 
+import requests
+
 # ---------- 统一通知模块加载 ----------
 has_notify = False
-send_msg = None
 try:
     from notify import send
 
@@ -49,17 +49,16 @@ def notify_user(title, content):
 
 def get_random_one_word():
     try:
-        # 使用官方一言 API，不需要 SSL 复杂验证
         response = requests.get("https://v1.hitokoto.cn", timeout=5)
         if response.status_code == 200:
             return response.json().get("hitokoto", "今日一言不可得")
-        else:
-            return "愿你每天都进步一点点"
+        return "愿你每天都进步一点点"
     except Exception as e:
         myprint(f"一言接口异常: {e}")
         return "心之所向，素履以往"
 
 def post_to_breo(token, content, title):
+    """发帖，成功返回 post_id，失败返回 None"""
     url = "https://breoplus.breo.cn/breo-app/communityBaseInfo/releasePost"
     headers = {
         "token": token,
@@ -81,7 +80,7 @@ def post_to_breo(token, content, title):
         "topicText": ""
     }
     try:
-        response = requests.post(url, headers=headers, data=json.dumps(data))
+        response = requests.post(url, headers=headers, data=json.dumps(data), timeout=15)
         if response.status_code == 200:
             result = response.json()
             if result.get("success", False):
@@ -99,7 +98,9 @@ def post_to_breo(token, content, title):
         myprint(f"❌ 请求错误: {e}")
         return None
 
+
 def collect_post(token, post_id):
+    """收藏，返回 True/False"""
     url = "https://breoplus.breo.cn/breo-app/communityBaseInfo/collect"
     headers = {
         "token": token,
@@ -111,27 +112,31 @@ def collect_post(token, post_id):
         "encrypt": "1",
         "Content-Type": "application/json; charset=UTF-8"
     }
-    data = {
-        "postId": post_id
-    }
+    data = {"postId": post_id}
     try:
-        response = requests.post(url, headers=headers, data=json.dumps(data))
+        response = requests.post(url, headers=headers, data=json.dumps(data), timeout=15)
         if response.status_code == 200:
             result = response.json()
             if result.get("success", False):
                 myprint("✅ 收藏成功！")
                 myprint(f"获得点数: {result['result']['point']}")
                 myprint(f"成长值: {result['result']['grow']}")
+                return True
             else:
                 myprint(f"❌ 收藏失败，错误信息：{result.get('message', '未知错误')}")
+                return False
         else:
             myprint(f"❌ 请求失败，状态码：{response.status_code}")
+            return False
     except Exception as e:
         myprint(f"❌ 请求错误: {e}")
+        return False
+
 
 def comment_post(token, post_id):
-    for _ in range(2):  # 评论2次
-        comment_content = get_random_one_word()  # 使用随机一言作为评论内容
+    """评论两次，返回 True/False"""
+    for i in range(2):
+        comment_content = get_random_one_word()
         url = "https://breoplus.breo.cn/breo-app/communityBaseInfo/comment"
         headers = {
             "token": token,
@@ -149,23 +154,29 @@ def comment_post(token, post_id):
             "postId": post_id
         }
         try:
-            response = requests.post(url, headers=headers, data=json.dumps(data))
+            response = requests.post(url, headers=headers, data=json.dumps(data), timeout=15)
             if response.status_code == 200:
                 result = response.json()
                 if result.get("success", False):
-                    myprint("✅ 评论成功！")
+                    myprint(f"✅ 第{i + 1}次评论成功！")
                     myprint(f"评论内容: {result['result']['rootOutVO']['commentText']}")
                     myprint(f"获得点数: {result['result']['point']}")
                     myprint(f"成长值: {result['result']['grow']}")
                 else:
                     myprint(f"❌ 评论失败，错误信息：{result.get('message', '未知错误')}")
+                    return False
             else:
                 myprint(f"❌ 请求失败，状态码：{response.status_code}")
+                return False
         except Exception as e:
             myprint(f"❌ 请求错误: {e}")
-        time.sleep(1)  # 避免频繁请求
+            return False
+        time.sleep(1)
+    return True
+
 
 def browse_mall(token):
+    """浏览商城，返回 True/False"""
     url = "https://breoplus.breo.cn/breo-app/user/po-task-info/mall"
     headers = {
         "token": token,
@@ -177,21 +188,27 @@ def browse_mall(token):
         "encrypt": "1"
     }
     try:
-        response = requests.post(url, headers=headers)
+        response = requests.post(url, headers=headers, timeout=15)
         if response.status_code == 200:
             result = response.json()
             if result.get("success", False):
                 myprint("✅ 浏览商城成功！")
                 myprint(f"获得点数: {result['result']['point']}")
                 myprint(f"成长值: {result['result']['grow']}")
+                return True
             else:
                 myprint(f"❌ 浏览商城失败，错误信息：{result.get('message', '未知错误')}")
+                return False
         else:
             myprint(f"❌ 请求失败，状态码：{response.status_code}")
+            return False
     except Exception as e:
         myprint(f"❌ 请求错误: {e}")
+        return False
+
 
 def punch_in(token):
+    """签到，返回 True/False"""
     url = "https://breoplus.breo.cn/breo-app/user/po-task-info/punch"
     headers = {
         "Host": "breoplus.breo.cn",
@@ -205,19 +222,63 @@ def punch_in(token):
         "Accept-Encoding": "gzip, deflate, br"
     }
     try:
-        response = requests.post(url, headers=headers)
+        response = requests.post(url, headers=headers, timeout=15)
         if response.status_code == 200:
             result = response.json()
             if result.get("success", False):
                 myprint("✅ 签到成功！")
                 myprint(f"获得点数: {result['result']['point']}")
                 myprint(f"成长值: {result['result']['grow']}")
+                return True
             else:
                 myprint(f"❌ 签到失败，错误信息：{result.get('message', '未知错误')}")
+                return False
         else:
             myprint(f"❌ 请求失败，状态码：{response.status_code}")
+            return False
     except Exception as e:
         myprint(f"❌ 请求错误: {e}")
+        return False
+
+
+# ---------- 单账号任务 ----------
+def run_account(token, idx):
+    """
+    执行单个账号的完整任务流
+    签到失败则跳过后续操作
+    """
+    myprint(f"\n-------------- 账号 {idx} 开始 --------------")
+
+    # 1. 签到
+    myprint("🚀 正在签到...")
+    if not punch_in(token):
+        myprint("⛔ 签到失败，跳过该账号后续操作")
+        myprint(f"-------------- 账号 {idx} 结束 --------------")
+        return
+
+    # 2. 发帖
+    myprint("\n📝 正在发布帖子...")
+    post_id = post_to_breo(token, "这是一个自动发布的帖子", "自动化测试")
+    if not post_id:
+        myprint("⛔ 发帖失败，跳过后续操作")
+        myprint(f"-------------- 账号 {idx} 结束 --------------")
+        return
+
+    # 3. 收藏
+    myprint("\n⭐ 正在收藏帖子...")
+    if not collect_post(token, post_id):
+        myprint("⚠️ 收藏失败，继续后续操作")
+
+    # 4. 评论
+    myprint("\n💬 正在评论帖子...")
+    if not comment_post(token, post_id):
+        myprint("⚠️ 评论失败，继续后续操作")
+
+    # 5. 浏览商城
+    myprint("\n🛒 正在浏览商城...")
+    browse_mall(token)
+
+    myprint(f"-------------- 账号 {idx} 结束 --------------")
 
 
 if __name__ == "__main__":
@@ -231,26 +292,8 @@ if __name__ == "__main__":
         else:
             myprint("=开始执行任务=")
             for i, token in enumerate(tokens, 1):
-                if token.strip():  # 跳过空行
-                    myprint(f"\n-------------- 账号 {i} 开始 --------------")
-                    myprint("🚀 正在签到...")
-                    punch_in(token)
-
-                    myprint("\n📝 正在发布帖子...")
-                    post_id = post_to_breo(token, "这是一个自动发布的帖子", "自动化测试")
-                    if post_id:
-                        myprint("\n⭐ 正在收藏帖子...")
-                        collect_post(token, post_id)
-
-                        myprint("\n💬 正在评论帖子...")
-                        comment_post(token, post_id)
-                    else:
-                        myprint("❌ 发帖失败，跳过后续操作。")
-
-                    myprint("\n🛒 正在浏览商城...")
-                    browse_mall(token)
-
-                    myprint(f"-------------- 账号 {i} 结束 --------------")
+                if token.strip():
+                    run_account(token.strip(), i)
 
             myprint("\n=所有任务执行完毕=")
 
