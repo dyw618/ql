@@ -138,7 +138,7 @@ def main():
     url_list = [primary_base, backup_base]
 
     max_retries = 3  # 每个域名最大重试次数（仅对网络错误）
-    retry_interval = 600  # 10 分钟
+    retry_interval = 60  # 1 分钟
 
     # 循环尝试不同域名
     for idx, base_url in enumerate(url_list):
