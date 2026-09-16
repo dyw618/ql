@@ -86,6 +86,7 @@ class Task {
 			this.expireFlag = true
 		} else {
 			this.token = result.Data.Token
+			this.token2 = result.Data.RefreshToken
 		}
 	}
 	MD5(str) {
@@ -178,7 +179,7 @@ class Task {
 		let { data: result } = await this.request(options);
 		if (result?.Code == '0') {
 			//打印签到结果
-			$.log(`🌸账号[${this.index}]` + `昵称:${result.Data.NickName}` + `积分:${result.Data.Point}`)
+			$.log(`🌸账号[${this.index}]` + `昵称:${result.Data.NickName}` + `积分:${result.Data.UserExpPoint.Points}`)
 		}
 	}
 }
