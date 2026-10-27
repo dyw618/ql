@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
-得物0元抽 - Python 纯净版
 cron: 30 11 * * *
+new Env('得物0元抽')
 网址：app.dewu.com/api
 环境变量：dwck = x-auth-token（去掉Bearer）
 多账号用 & 或 换行 分隔
