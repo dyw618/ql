@@ -2,6 +2,8 @@
 # -*- coding: utf-8 -*-
 """
 小蚕抢兑 - 青龙面板环境变量说明
+cron: 0 0 * * *
+new Env('小蚕抢兑')
 
 微信小程序打开：https://wxaurl.cn/NC0xaRFfSsp
 抓包接口https://gw.xiaocantech.com/rpc请求头中的三个值，ck有效期888小时
@@ -15,8 +17,6 @@
   XC_REDEEM_ATTEMPTS  每个账号抢兑总请求次数，默认 8
   XC_NEW_LEVEL        兑换列表请求中的会员等级，默认 6
   XC_IS_PLUS          是否是svip，默认 true
-
-饱了么脚本交流群：476250706
 """
 
 import base64 as _b

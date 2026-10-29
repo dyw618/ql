@@ -1,10 +1,16 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-#   小程序：https://wxaurl.cn/d3L2fuNtnch
-#   变量：xcplus 多号： @分割
-#   找https://gwh.xiaocantech.com/rpc接口
-#   抓该接口请求头 x-vayne 和 x-teemo 和 x-sivir的值
-#   格式： x-vayne#x-teemo#x-sivir
+"""
+小蚕霸王餐 - 青龙面板环境变量说明
+cron: 0 8 * * *
+new Env('小蚕霸王餐')
+
+微信小程序打开：https://wxaurl.cn/d3L2fuNtnch
+抓包接口https://gw.xiaocantech.com/rpc
+必填环境变量:
+  xcplus              小蚕账号，多账号用 @ 或换行分隔
+                      格式: x-vayne#x-teemo#x-sivir
+"""
 
 
 _s0 = __import__

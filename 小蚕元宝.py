@@ -1,12 +1,21 @@
-#   小程序：https://wxaurl.cn/d3L2fuNtnch
-#   变量：xcplus 多号： @分割
-#   找https://gw.xiaocantech.com/rpc接口
-#   抓该接口请求头 x-vayne 和 x-teemo 和 x-sivir的值
-#   格式： x-vayne#x-teemo#x-sivir
-
-
-# !/usr/bin/env python3
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+"""
+cron: 30 8 * * *
+new Env('小蚕元宝')
+
+用法:
+  1. 抓包获取认证信息:
+     小程序：https://wxaurl.cn/d3L2fuNtnch
+     对 https://gw.xiaocantech.com/rpc 抓包，找到任意请求的以下三个请求头:
+       x-vayne   → 用户ID (数字)
+       x-teemo   → silk_id (数字)
+       x-sivir   → JWT Token (eyJ...)
+
+  2. 设置环境变量:
+     - xcplus          格式: x-vayne#x-teemo#x-sivir
+                        多账号用 @ 分隔，例如:  uid1#sid1#jwt1@uid2#sid2#jwt2
+"""
 _s0 = __import__
 _m1 = _s0('marshal');
 _z1 = _s0('zlib');

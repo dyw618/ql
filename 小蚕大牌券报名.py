@@ -1,15 +1,25 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+"""
+cron: 59 13 * * *
+new Env('小蚕大牌券报名')
 
-# 青龙变量只需要：
-#   xcplus 多号：换行 或 @ 分割
-#   账号格式：备注#x-vayne#x-teemo#x-sivir
-#   也支持：备注#x-vayne#x-teemo#x-sivir#平台订单号
-#
-# 其他配置直接改下面的变量。
-# 必填订单号：
-#   方式1：账号后追加 #平台订单号
-#   方式2：设置 PLATFORM_ORDER_IDS，多个订单号用换行或 @ 分割，顺序对应 xcbm
+用法:
+  1. 抓包获取认证信息:
+     小程序：https://wxaurl.cn/d3L2fuNtnch
+     对 https://gw.xiaocantech.com/rpc 抓包，找到任意请求的以下三个请求头:
+       x-vayne   → 用户ID (数字)
+       x-teemo   → silk_id (数字)
+       x-sivir   → JWT Token (eyJ...)
+
+  2. 设置环境变量:
+     - xcplus          格式: x-vayne#x-teemo#x-sivir
+                        多账号用 @ 分隔，例如:  uid1#sid1#jwt1@uid2#sid2#jwt2
+其他配置直接改下面的变量。
+必填订单号：
+  方式1：账号后追加 #平台订单号
+  方式2：设置 PLATFORM_ORDER_IDS，多个订单号用换行或 @ 分割，顺序对应 xcbm
+"""
 
 import hashlib
 import json
