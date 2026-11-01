@@ -10,7 +10,9 @@ Cookie获取：微信小程序抓包获取 Cookie 请求头
 环境变量：
 - ICBC_LOTTERY_CK：签到Cookie（必填，多账号换行分隔）
 - ICBC_SIGN_ACT_ID：签到活动ID（可选，默认 LOT20260804155637971766）
+    https://chp.icbc.com.cn/bmcs/api-bmcs/h5/lotRec/getSignActStandardPredict?signActId=LOT20260804155637971766
 - ICBC_ACT_ID：抽奖活动ID（可选，默认 LOT20260331140621284295）
+    https://chp.icbc.com.cn/bmcs/api-bmcs/v3/lott/h5/getActivityDetail?actId=LOT20260331140621284295
 - ICBC_CORP_ID：（可选，默认 2000000882）
 - ICBC_RANDOM_DELAY：随机延迟最大秒数（可选，默认300秒）
 - ICBC_ENABLE_RANDOM：是否启用随机延迟（可选，默认true）
