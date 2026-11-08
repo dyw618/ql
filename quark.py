@@ -18,20 +18,35 @@ import sys
 
 import requests
 
+# ---------------- 统一通知模块加载 ----------------
+hadsend = False
+send = None
 try:
     from notify import send
-except Exception as err:
-    print(f'{err}\n❌ 加载通知服务失败~')
-    send = None
 
+    hadsend = True
+    print("✅ 已加载notify.py通知模块")
+except ImportError:
+    print("⚠️  未加载通知模块，跳过通知功能")
+
+
+def notify_user(title, content):
+    """统一通知函数"""
+    if hadsend:
+        try:
+            send(title, content)
+            print(f"✅ 通知发送完成: {title}")
+        except Exception as e:
+            print(f"❌ 通知发送失败: {e}")
+    else:
+        print(f"📢 {title}\n📄 {content}")
 
 def get_url():
     """获取环境变量中的完整 URL"""
     url = os.getenv("QUARK_COOKIE", "").strip()
     if not url:
         print("❌ 未添加 QUARK_COOKIE 变量")
-        if send:
-            send("夸克自动签到", "❌ 未添加 QUARK_COOKIE 变量")
+        notify_user("夸克自动签到", "❌ 未添加 QUARK_COOKIE 变量")
         sys.exit(0)
     return url
 
@@ -108,8 +123,7 @@ def main():
     if not growth_info:
         msg = "❌ 签到异常: 获取成长信息失败"
         print(msg)
-        if send:
-            send("夸克自动签到", msg)
+        notify_user("夸克自动签到", msg)
         return
 
     # 构建日志
@@ -137,8 +151,7 @@ def main():
             log += f"❌ 签到异常: {result}\n"
 
     print(log)
-    if send:
-        send("夸克自动签到", log)
+    notify_user("夸克自动签到", log)
     print("----------夸克网盘签到完毕----------")
 
 

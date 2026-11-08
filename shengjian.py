@@ -17,19 +17,21 @@ const $ = new Env("声荐签到小程序");
 """
 
 import os
-import time
 import random
+import time
+
 import requests
 
-# ---------- 统一通知模块加载 ----------
-has_notify = False
-send_msg = None
+# ---------------- 统一通知模块加载 ----------------
+hadsend = False
+send = None
 try:
     from notify import send
-    has_notify = True
-    print("✅ 已加载 notify.py 通知模块")
+
+    hadsend = True
+    print("✅ 已加载notify.py通知模块")
 except ImportError:
-    print("⚠️ 未找到 notify.py，通知功能将不可用")
+    print("⚠️  未加载通知模块，跳过通知功能")
 
 # ---------- 随机延迟配置 ----------
 MAX_RANDOM_DELAY = int(os.getenv("MAX_RANDOM_DELAY", "3600"))
@@ -62,7 +64,7 @@ def wait_with_countdown(delay_seconds, task_name):
 
 def notify_user(title, content):
     """统一通知推送"""
-    if has_notify:
+    if hadsend:
         try:
             send(title, content)
             print(f"✅ 通知发送完成: {title}")

@@ -26,6 +26,18 @@ except ImportError:
     print("⚠️  未加载通知模块，跳过通知功能")
 
 
+def notify_user(title, content):
+    """统一通知函数"""
+    if hadsend:
+        try:
+            send(title, content)
+            print(f"✅ 通知发送完成: {title}")
+        except Exception as e:
+            print(f"❌ 通知发送失败: {e}")
+    else:
+        print(f"📢 {title}\n📄 {content}")
+
+
 class Base64Obfuscator:
     def __init__(self):
         self.table = (
@@ -163,17 +175,18 @@ def login(phone, password):
         data = response.json()
         if data.get("code") == 0:
             token = data["data"]["token"]
-            return token
+            return token, "登录成功"
         else:
-            print(f"登录失败: {data.get('message', '未知错误')}")
-            return None
+            msg = f"登录失败: {data.get('message', '未知错误')}"
+            print(msg)
+            return None, msg
     except Exception as e:
-        print(f"登录请求异常: {str(e)}")
-        return None
+        msg = f"登录请求异常: {str(e)}"
+        print(msg)
+        return None, msg
 
 
 def get_wallet_info(token):
-    """获取钱包信息（余额）"""
     url = "https://service.ipzan.com/home/userWallet-find"
     headers = {
         'Host': 'service.ipzan.com',
@@ -203,20 +216,20 @@ def get_wallet_info(token):
             bonus_amount = wallet_data.get("bonus_amount", 0)
             real_amount = wallet_data.get("real_amount", 0)
             levelReward = wallet_data.get("levelReward", False)
-
             print(f"💰 当前余额: {balance}")
             print(f"🎁 奖励金额: {bonus_amount}")
             print(f"💵 真实金额: {real_amount}")
             if levelReward:
                 print(f"🏆 可领取等级奖励")
-
-            return wallet_data
+            return wallet_data, f"余额:{balance},奖励:{bonus_amount},实额:{real_amount}"
         else:
-            print(f"查询余额失败: {data.get('message', '未知错误')}")
-            return None
+            msg = f"查询余额失败: {data.get('message', '未知错误')}"
+            print(msg)
+            return None, msg
     except Exception as e:
-        print(f"查询余额异常: {str(e)}")
-        return None
+        msg = f"查询余额异常: {str(e)}"
+        print(msg)
+        return None, msg
 
 
 def sign_in(token):
@@ -241,10 +254,15 @@ def sign_in(token):
         data = response.json()
         if data.get("code") == 0:
             print("签到成功")
+            return "签到成功"
         else:
-            print(f"签到失败: {data.get('message', '未知错误')}")
+            msg = f"签到失败: {data.get('message', '未知错误')}"
+            print(msg)
+            return msg
     except Exception as e:
-        print(f"签到请求异常: {str(e)}")
+        msg = f"签到请求异常: {str(e)}"
+        print(msg)
+        return msg
 
 
 if __name__ == "__main__":
@@ -274,21 +292,33 @@ if __name__ == "__main__":
     accounts = [line.strip() for line in pzhttp.split('\n') if line.strip()]
     print(f"📱 检测到 {len(accounts)} 个账号，开始签到...")
 
+    notify_body = []
+    notify_body.append(f"品赞代理签到｜共 {len(accounts)} 账号\n")
+
     for idx, acc_line in enumerate(accounts, 1):
         try:
             phone, password = acc_line.split('#')
             print(f"\n--- 账号 {idx}: {phone} ---")
-            token = login(phone, password)
+            token, login_msg = login(phone, password)
+            line = f"【账号{idx} {phone}】\n  {login_msg}\n"
             if token:
-                # 查询余额
-                get_wallet_info(token)
-                # 签到
-                sign_in(token)
-            else:
-                print("跳过签到")
+                _, wallet_msg = get_wallet_info(token)
+                sign_msg = sign_in(token)
+                line += f"  {wallet_msg}\n  {sign_msg}\n"
+            notify_body.append(line)
         except ValueError:
-            print(f"账号 {idx} 格式错误: {acc_line} (应为 账号#密码)")
+            err = f"【账号{idx}】格式错误：{acc_line}（应为账号#密码）\n"
+            print(err)
+            notify_body.append(err)
         except Exception as e:
-            print(f"账号 {idx} 处理异常: {str(e)}")
+            err = f"【账号{idx}】处理异常：{str(e)}\n"
+            print(err)
+            notify_body.append(err)
+
+    notify_body.append("\n🎉 所有账号签到完成")
+    full_msg = ''.join(notify_body)
+
+    # 使用你指定的 notify_user 发送
+    notify_user("品赞HTTP代理签到", full_msg)
 
     print("\n🎉 所有账号签到完成")

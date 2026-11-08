@@ -26,6 +26,17 @@ import re
 import time
 from datetime import datetime
 
+# ---------------- 统一通知模块加载 ----------------
+hadsend = False
+send = None
+try:
+    from notify import send
+
+    hadsend = True
+    print("✅ 已加载notify.py通知模块")
+except ImportError:
+    print("⚠️  未加载通知模块，跳过通知功能")
+
 # 使用 curl_cffi 模拟浏览器
 try:
     from curl_cffi import requests
@@ -37,14 +48,6 @@ except ImportError:
     import urllib3
 
     urllib3.disable_warnings()
-
-# 通知模块
-try:
-    from notify import send
-
-    NOTIFY_ENABLED = True
-except ImportError:
-    NOTIFY_ENABLED = False
 
 # ---------- 配置 ----------
 CORP_ID = int(os.getenv("ICBC_CORP_ID", "2000000882"))
@@ -86,7 +89,7 @@ def random_delay():
 
 
 def send_notification(title, content):
-    if NOTIFY_ENABLED:
+    if hadsend:
         try:
             send(title, content)
             log_print("✅ 通知发送成功")

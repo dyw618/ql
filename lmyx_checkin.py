@@ -23,17 +23,20 @@ import urllib3
 # 禁用 SSL 警告
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
-# ---------- 通知模块加载 ----------
-has_notify = False
+# ---------------- 统一通知模块加载 ----------------
+hadsend = False
+send = None
 try:
     from notify import send
-    has_notify = True
+
+    hadsend = True
+    print("✅ 已加载notify.py通知模块")
 except ImportError:
-    pass
+    print("⚠️  未加载通知模块，跳过通知功能")
 
 
 def send_notify(title, content):
-    if has_notify:
+    if hadsend:
         try:
             send(title, content)
             print("✅ 通知已发送")
